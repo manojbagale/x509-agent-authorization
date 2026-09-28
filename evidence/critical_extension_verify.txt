@@ -1,0 +1,6 @@
+$ openssl verify -CAfile /mnt/data/x509_agent_auth_poc_v2/evidence/root_ca.pem /mnt/data/x509_agent_auth_poc_v2/evidence/agent_critical.pem
+
+error 34 at 0 depth lookup: unhandled critical extension
+error /mnt/data/x509_agent_auth_poc_v2/evidence/agent_critical.pem: verification failed
+
+exit_code=2
