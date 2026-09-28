@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated credentials and private keys
+*.key
+*.key.pem
+*-key.pem
+*_key.pem
+private/
+secrets/
+
+# Generated certificate artifacts (recreate with scripts)
+demo/
+*.csr
+*.p12
+*.pfx
+
+# Local scratch / benchmark output
+.tmp/
+coverage.xml
+htmlcov/
+.coverage

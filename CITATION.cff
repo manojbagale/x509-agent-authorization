@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this research prototype, please cite this repository."
+title: "X.509 Authorization for AI Agents"
+type: software
+authors:
+  - family-names: Bagale
+    given-names: Manoj
+version: 0.1.0
+date-released: 2026-09-28
+abstract: "A research prototype comparing certificate-native, external-policy, and hybrid authorization models for AI-agent tool access."

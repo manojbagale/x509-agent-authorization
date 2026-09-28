@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "x509-agent-authorization"
+version = "0.1.0"
+description = "Research prototype comparing certificate-native, external, and hybrid authorization for AI-agent tool access."
+requires-python = ">=3.11"
+dependencies = [
+  "cryptography>=45,<47",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<10",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
