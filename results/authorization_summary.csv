@@ -1,0 +1,5 @@
+mode,certificate_der_bytes,session_open_ms,decision_p50_ms,decision_p95_ms,decision_p99_ms,false_allow,false_deny,policy_narrow_effective_without_reissue,policy_expand_shell_allowed_without_reissue,kill_to_deny_ms_local,audit_events
+certificate,686,1.479928,0.006412,0.021788,0.03175,0,0,False,False,0.00983,10013
+external,487,0.685317,0.006432,0.007403,0.022465,0,0,True,True,0.00737,10013
+hybrid,570,0.613402,0.006457,0.006808,0.020016,0,0,True,True,0.005629,10013
+hybrid_ceiling,726,0.59456,0.007403,0.007779,0.011245,0,0,True,False,0.005587,10013
