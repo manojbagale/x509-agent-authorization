@@ -1,0 +1,28 @@
+{
+  "server": {
+    "tls_version": "TLSv1.3",
+    "cipher": "TLS_AES_256_GCM_SHA384",
+    "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+    "responses": [
+      {
+        "allowed": true,
+        "reason": "matched_live_policy_and_ceiling"
+      },
+      {
+        "allowed": false,
+        "reason": "outside_scope"
+      }
+    ]
+  },
+  "client_responses": [
+    {
+      "allowed": true,
+      "reason": "matched_live_policy_and_ceiling"
+    },
+    {
+      "allowed": false,
+      "reason": "outside_scope"
+    }
+  ],
+  "mTLS_client_certificate_required": true
+}
