@@ -1,0 +1,40 @@
+{
+  "summary": [
+    {
+      "mode": "certificate",
+      "runs": 10,
+      "median_decision_p95_ms": 0.0066630000000000005,
+      "min_decision_p95_ms": 0.006636,
+      "max_decision_p95_ms": 0.022351,
+      "median_session_open_ms": 0.585823,
+      "median_kill_to_deny_ms_local": 0.005411
+    },
+    {
+      "mode": "external",
+      "runs": 10,
+      "median_decision_p95_ms": 0.006708,
+      "min_decision_p95_ms": 0.006593,
+      "max_decision_p95_ms": 0.007564,
+      "median_session_open_ms": 0.557951,
+      "median_kill_to_deny_ms_local": 0.0056255
+    },
+    {
+      "mode": "hybrid",
+      "runs": 10,
+      "median_decision_p95_ms": 0.006775,
+      "min_decision_p95_ms": 0.006668,
+      "max_decision_p95_ms": 0.006834,
+      "median_session_open_ms": 0.6076815,
+      "median_kill_to_deny_ms_local": 0.005442499999999999
+    },
+    {
+      "mode": "hybrid_ceiling",
+      "runs": 10,
+      "median_decision_p95_ms": 0.007835,
+      "min_decision_p95_ms": 0.007731,
+      "max_decision_p95_ms": 0.007869,
+      "median_session_open_ms": 0.5822445,
+      "median_kill_to_deny_ms_local": 0.0052975
+    }
+  ]
+}
