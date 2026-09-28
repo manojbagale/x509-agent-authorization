@@ -1,0 +1,17 @@
+mode,permission_count,median_der_bytes,min_der_bytes,max_der_bytes
+certificate,0,557,556,558
+external,0,488,487,489
+hybrid,0,570,569,571
+hybrid_ceiling,0,599,598,600
+certificate,1,633,632,634
+external,1,488,487,489
+hybrid,1,570,569,571
+hybrid_ceiling,1,675,673,676
+certificate,10,1304,1303,1305
+external,10,488,487,489
+hybrid,10,570,569,571
+hybrid_ceiling,10,1344,1343,1345
+certificate,100,7964,7963,7965
+external,100,488,487,489
+hybrid,100,570,569,571
+hybrid_ceiling,100,8004,8003,8005
