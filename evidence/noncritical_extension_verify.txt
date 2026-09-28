@@ -1,0 +1,4 @@
+$ openssl verify -CAfile /mnt/data/x509_agent_auth_poc_v2/evidence/root_ca.pem /mnt/data/x509_agent_auth_poc_v2/evidence/agent_noncritical.pem
+/mnt/data/x509_agent_auth_poc_v2/evidence/agent_noncritical.pem: OK
+
+exit_code=0
