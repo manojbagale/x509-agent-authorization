@@ -1,8 +1,7 @@
 name: tests
 
+# Hosted tests are opt-in; local tests run with python -m pytest.
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 permissions:

@@ -19,7 +19,7 @@ python scripts/demo.py
 
 The demo starts a local server and client, approves a short-lived agent certificate, and makes seven requests over one mTLS connection. You will see an allowed file read, denied shell and out-of-scope requests, a policy change that blocks access, restored access, and two denials after the credential is killed. Only the two allowed reads reach the file tool.
 
-Run the tests with `python -m pytest`. To save the full demo output, use `python scripts/demo.py --output .local-runs/demo.json`.
+Run the tests with `python -m pytest`. Hosted tests can be started manually from the Actions tab. To save the full demo output, use `python scripts/demo.py --output .local-runs/demo.json`.
 
 ## How it works
 
