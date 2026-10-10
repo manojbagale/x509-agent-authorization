@@ -7,7 +7,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.x509.oid import ObjectIdentifier
 
-from agent_auth.experiment import BASE_POLICY, REQUESTS, issue_for_mode, make_store
+from agent_auth.scenarios import BASE_POLICY, REQUESTS, issue_for_mode, make_store
 from agent_auth.gateway import AuthorizationError, AuthorizationGateway
 from agent_auth.pki import AGENT_AUTHZ_OID, AGENT_URI, ResearchCA, decode_agent_extension, encode_agent_extension
 

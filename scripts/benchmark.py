@@ -29,8 +29,8 @@ def main(runs: int = 10):
             "median_kill_to_deny_ms_local": statistics.median(kill_ms),
         })
 
-    out = Path(__file__).resolve().parents[1] / "results"
-    out.mkdir(exist_ok=True)
+    out = Path(__file__).resolve().parents[1] / ".local-runs" / "certificate-study"
+    out.mkdir(parents=True, exist_ok=True)
     (out / "benchmark_repeated.json").write_text(json.dumps({"summary": summary}, indent=2))
     with (out / "benchmark_repeated.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(summary[0].keys()))

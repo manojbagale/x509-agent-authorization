@@ -1,3 +1,4 @@
+"""Local research CA and the experimental authorization extension."""
 from __future__ import annotations
 
 import datetime as dt
@@ -110,7 +111,7 @@ class ResearchCA:
     @classmethod
     def create(cls) -> "ResearchCA":
         key = ec.generate_private_key(ec.SECP256R1())
-        subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Senior Seminar Research Root CA")])
+        subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Agent Authorization Research Root CA")])
         now = dt.datetime.now(dt.timezone.utc)
         cert = (
             x509.CertificateBuilder()

@@ -34,3 +34,6 @@ demo/
 coverage.xml
 htmlcov/
 .coverage
+
+# Fresh experiment runs; published snapshots live in results/
+.local-runs/

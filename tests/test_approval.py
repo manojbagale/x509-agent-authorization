@@ -5,7 +5,7 @@ from dataclasses import replace
 import pytest
 
 from agent_auth.approval import ApprovedGrant, ApprovedIssuer, PermissionAuthority
-from agent_auth.experiment import BASE_POLICY, make_store
+from agent_auth.scenarios import BASE_POLICY, make_store
 from agent_auth.gateway import AuthorizationError, AuthorizationGateway
 from agent_auth.pki import AGENT_URI, ResearchCA
 from agent_auth.token_baseline import TokenAuthority, TokenGateway

@@ -67,12 +67,12 @@ The demo records one-host monotonic timestamps for kill commit, next decision, r
 ```bash
 python -m pip install -e ".[dev]"
 python -m pytest
-python -m agent_auth.evaluation --runs 10 --iterations 2000 --warmup 100 --output-dir results/midterm
-python -m agent_auth.mtls_demo > results/midterm/mtls_output.json
-python -m json.tool results/midterm/mtls_output.json
+python -m agent_auth.evaluation --runs 10 --iterations 2000 --warmup 100 --output-dir .local-runs
+python scripts/demo.py --output .local-runs/mtls_output.json
+python scripts/show_results.py
 ```
 
-Run on Ubuntu/Linux or WSL; the dispatcher requires POSIX directory-descriptor operations. Inspect metadata, summary, per-run distributions, raw samples, and demo audit/dispatch records. Historic Weeks 5–6 evidence remains separate from current generated output. A hosted Actions status must be taken from a run that actually executed, not inferred from local tests.
+Run on Ubuntu/Linux or WSL; the dispatcher requires POSIX directory-descriptor operations. Inspect metadata, summary, per-run distributions, raw samples, and demo audit/dispatch records. Dated snapshots under `results/` remain separate from new output under `.local-runs/`. A hosted Actions status must be taken from a run that actually executed, not inferred from local tests.
 
 ## Remaining experiments
 

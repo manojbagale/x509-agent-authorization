@@ -1,4 +1,4 @@
-"""Run and explain the actual persistent mTLS demonstration for a recording."""
+"""Run the persistent mTLS file-tool demonstration."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +10,7 @@ from agent_auth.mtls_demo import run_mtls_demo
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, help="Save the complete evidence JSON from this execution.")
+    parser.add_argument("--output", type=Path, help="Save the complete result JSON from this execution.")
     args = parser.parse_args()
     result = run_mtls_demo()
     if args.output is not None:
@@ -41,7 +41,7 @@ def main() -> None:
     print("Scope: local custom JSON protocol; no MCP/LLM integration or OS sandbox.")
     print("Subsequent calls are blocked; an already-running operation is not canceled.")
     if args.output is not None:
-        print(f"Complete evidence saved: {args.output}")
+        print(f"Complete result saved: {args.output}")
 
 
 if __name__ == "__main__":

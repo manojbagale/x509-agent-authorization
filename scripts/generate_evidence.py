@@ -4,10 +4,10 @@ import subprocess
 from cryptography.hazmat.primitives import serialization
 
 from agent_auth.pki import ResearchCA
-from agent_auth.experiment import BASE_POLICY
+from agent_auth.scenarios import BASE_POLICY
 
-out = Path(__file__).resolve().parents[1] / 'evidence'
-out.mkdir(exist_ok=True)
+out = Path(__file__).resolve().parents[1] / '.local-runs' / 'openssl'
+out.mkdir(parents=True, exist_ok=True)
 ca = ResearchCA.create()
 noncritical = ca.issue_agent(mode='certificate', permissions=deepcopy(BASE_POLICY['permissions']), extension_critical=False)
 critical = ca.issue_agent(mode='certificate', permissions=deepcopy(BASE_POLICY['permissions']), extension_critical=True)

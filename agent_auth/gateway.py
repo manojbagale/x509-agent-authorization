@@ -1,11 +1,10 @@
+"""Certificate sessions and per-call authorization."""
 from __future__ import annotations
 
 import datetime as dt
-import posixpath
 import secrets
 from dataclasses import dataclass
 from typing import Any, Callable
-from copy import deepcopy
 from urllib.parse import urlparse
 
 from cryptography import x509
@@ -14,11 +13,11 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import ExtensionOID, ExtendedKeyUsageOID
 
+from agent_auth.policy import (
+    AuthorizationError, PolicyStore, canonicalize_resource,
+    matches_permissions, validate_permissions, validate_policy,
+)
 from agent_auth.pki import AGENT_AUTHZ_OID, TRUST_DOMAIN, ResearchCA, decode_agent_extension
-
-
-class AuthorizationError(Exception):
-    pass
 
 
 @dataclass(frozen=True)
@@ -30,61 +29,6 @@ class Session:
     embedded_policy: dict[str, Any] | None = None
     policy_id: str | None = None
     max_permissions: list[dict[str, Any]] | None = None
-
-
-def canonicalize_resource(resource: str) -> str:
-    """Canonicalize a POSIX logical resource; percent characters are literal.
-
-    A dispatcher must use these same semantics. This is not a filesystem
-    symlink or URI-percent-decoding security boundary.
-    """
-    if not isinstance(resource, str) or not resource.startswith("/"):
-        raise AuthorizationError("resource must be an absolute POSIX path")
-    if "\\" in resource or "\x00" in resource:
-        raise AuthorizationError("resource contains unsupported path characters")
-    return "/" + posixpath.normpath(resource).lstrip("/")
-
-
-def validate_permissions(permissions: Any) -> list[dict[str, str]]:
-    if not isinstance(permissions, list):
-        raise AuthorizationError("permissions must be a list")
-    validated = []
-    for permission in permissions:
-        if not isinstance(permission, dict) or set(permission) != {"tool", "action", "resource_prefix"}:
-            raise AuthorizationError("permission requires tool, action and resource_prefix")
-        if any(not isinstance(value, str) or not value for value in permission.values()):
-            raise AuthorizationError("permission fields must be nonempty strings")
-        validated.append({**permission, "resource_prefix": canonicalize_resource(permission["resource_prefix"])})
-    return validated
-
-
-def validate_policy(policy: Any) -> dict[str, Any]:
-    if not isinstance(policy, dict) or "permissions" not in policy:
-        raise AuthorizationError("policy requires permissions")
-    return {**deepcopy(policy), "permissions": validate_permissions(policy["permissions"])}
-
-
-class PolicyStore:
-    """Trusted control-plane configuration, never exposed as an agent tool.
-
-    Copies prevent callers from silently changing a policy outside replacement.
-    Replacements are validated when evaluated so unavailable/malformed runtime
-    configuration denies requests rather than granting wider authority.
-    """
-    def __init__(self, policies: dict[str, Any]):
-        self.policies = deepcopy(policies)
-
-    def get_agent_policy(self, agent_id: str) -> dict[str, Any]:
-        return deepcopy(self.policies["agents"][agent_id])
-
-    def get_named_policy(self, policy_id: str) -> dict[str, Any]:
-        return deepcopy(self.policies["named_policies"][policy_id])
-
-    def replace_named_policy(self, policy_id: str, policy: dict[str, Any]) -> None:
-        self.policies["named_policies"][policy_id] = deepcopy(policy)
-
-    def replace_agent_policy(self, agent_id: str, policy: dict[str, Any]) -> None:
-        self.policies["agents"][agent_id] = deepcopy(policy)
 
 
 class AuthorizationGateway:
@@ -214,27 +158,8 @@ class AuthorizationGateway:
     def kill(self, session: Session) -> None:
         self.kill_registry.add(session.serial_number)
 
+    # Retain the public resource helper for existing callers.
     canonicalize_resource = staticmethod(canonicalize_resource)
-
-    @staticmethod
-    def _resource_matches(allowed_prefix: str, resource: str) -> bool:
-        prefix = posixpath.normpath(allowed_prefix)
-        if resource == prefix:
-            return True
-        return resource.startswith(prefix.rstrip("/") + "/")
-
-    @classmethod
-    def _matches(cls, permissions: list[dict[str, Any]], request: dict[str, str]) -> bool:
-        resource = cls.canonicalize_resource(request["resource"])
-        for p in validate_permissions(permissions):
-            if p.get("tool") != request["tool"]:
-                continue
-            if p.get("action") != request["action"]:
-                continue
-            prefix = p.get("resource_prefix")
-            if cls._resource_matches(prefix, resource):
-                return True
-        return False
 
     def _policy_for_session(self, session: Session) -> dict[str, Any]:
         if session.mode == "certificate":
@@ -269,10 +194,10 @@ class AuthorizationGateway:
 
         try:
             policy = validate_policy(self._policy_for_session(session))
-            live_match = self._matches(policy.get("permissions", []), request)
+            live_match = matches_permissions(policy.get("permissions", []), request)
             if session.mode == "hybrid_ceiling":
                 _, signed_payload = self._decode_mode(session.cert)
-                ceiling_match = self._matches(signed_payload["max_permissions"], request)
+                ceiling_match = matches_permissions(signed_payload["max_permissions"], request)
                 allowed = live_match and ceiling_match
                 reason = "matched_live_policy_and_ceiling" if allowed else (
                     "outside_signed_ceiling" if live_match and not ceiling_match else "outside_scope"

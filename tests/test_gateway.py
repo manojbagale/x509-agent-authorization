@@ -4,7 +4,7 @@ import pytest
 
 from agent_auth.pki import AGENT_URI, ResearchCA
 from agent_auth.gateway import AuthorizationGateway, AuthorizationError, PolicyStore
-from agent_auth.experiment import BASE_POLICY, REQUESTS, issue_for_mode
+from agent_auth.scenarios import BASE_POLICY, REQUESTS, issue_for_mode
 
 
 def make_gateway():

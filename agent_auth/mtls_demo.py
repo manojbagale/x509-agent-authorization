@@ -1,3 +1,4 @@
+"""End-to-end owner approval, mTLS and file-tool dispatch on localhost."""
 from __future__ import annotations
 
 import json
@@ -16,7 +17,7 @@ from cryptography.hazmat.primitives import serialization
 from agent_auth.pki import AGENT_URI, ResearchCA
 from agent_auth.approval import ApprovedIssuer, PermissionAuthority
 from agent_auth.gateway import AuthorizationGateway, PolicyStore
-from agent_auth.experiment import BASE_POLICY
+from agent_auth.scenarios import BASE_POLICY
 from agent_auth.tool_dispatch import FileToolDispatcher, ToolDispatchError
 
 MAX_FRAME_BYTES = 16384

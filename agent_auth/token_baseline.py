@@ -11,7 +11,7 @@ import hashlib
 import secrets
 from dataclasses import dataclass
 
-from agent_auth.gateway import AuthorizationError, AuthorizationGateway, PolicyStore, validate_policy
+from agent_auth.policy import AuthorizationError, PolicyStore, matches_permissions, validate_policy
 
 
 @dataclass(frozen=True)
@@ -91,7 +91,7 @@ class TokenGateway:
                 raise AuthorizationError("invalid_token")
             policy = self.policy_store.get_agent_policy(record.agent_id)
             validate_policy(policy)
-            allowed = AuthorizationGateway._matches(policy["permissions"], request)
+            allowed = matches_permissions(policy["permissions"], request)
             decision = (allowed, "matched_permission" if allowed else "outside_scope")
         except AuthorizationError as exc:
             reason = str(exc)

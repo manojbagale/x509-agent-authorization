@@ -1,6 +1,6 @@
 """Reproducible local evaluation; never substitutes for a network benchmark.
 
-Run ``python -m agent_auth.evaluation --output-dir results/midterm``.
+Run ``python -m agent_auth.evaluation --output-dir .local-runs``.
 Each result names the operation inside its timer. Historical results are untouched.
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ from typing import Callable
 
 from cryptography import x509
 
-from agent_auth.experiment import BASE_POLICY, MODES, REQUESTS, issue_for_mode, make_store, pct
+from agent_auth.scenarios import BASE_POLICY, MODES, REQUESTS, issue_for_mode, make_store
 from agent_auth.gateway import AuthorizationGateway
 from agent_auth.pki import AGENT_URI, ResearchCA
 
@@ -34,6 +34,14 @@ def timed_ms(operation: Callable) -> float:
     start = time.perf_counter_ns()
     operation()
     return (time.perf_counter_ns() - start) / 1_000_000
+
+
+def pct(values, p):
+    values = sorted(values)
+    if not values:
+        return 0.0
+    idx = min(len(values) - 1, int(round((p / 100) * (len(values) - 1))))
+    return values[idx]
 
 
 def distribution(values: list[float]) -> dict:
@@ -251,7 +259,7 @@ def evaluate(*, runs: int = 10, iterations: int = 2000, warmup: int = 100) -> di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output-dir", type=Path, default=Path("results/midterm"))
+    parser.add_argument("--output-dir", type=Path, default=Path(".local-runs"))
     parser.add_argument("--runs", type=int, default=10)
     parser.add_argument("--iterations", type=int, default=2000)
     parser.add_argument("--warmup", type=int, default=100)

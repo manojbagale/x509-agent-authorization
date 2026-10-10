@@ -1,26 +1,22 @@
 # Research history and interpretation
 
-## Proposal and first design phase
+## Initial design
 
-The Aug 27 proposal asked whether X.509 extensions could express tool permissions for MCP-based agents. The Sept 8 revision proposed Step CA, a Python MCP SDK agent, certificates lasting at most 15 minutes, per-call enforcement, ACME revocation, and normal/scope/lifecycle/adversarial scenarios. Neither proposal assigned week-by-week deadlines. Progress should be compared with those deliverables, not an invented original weekly schedule.
+The initial August–September design explored X.509 extensions for MCP agent tool permissions. It proposed Step CA, a Python MCP SDK agent, short-lived certificates, per-call enforcement, and lifecycle/adversarial scenarios. Early research separated authentication from authorization, placed identity in SAN, and identified the need for a separate gateway and runtime session kill.
 
-Progress Report 1 (Sept 14) documented research and design only. It separated authentication from authorization, reviewed SAN/EKU/custom-extension semantics, proposed a separate gateway, introduced an external-policy comparison, and identified resource matching and runtime session kill. Its diagrams and pseudocode were design evidence; implementation metrics were not claimed.
+## September prototype
 
-## Weeks 5–6 historical prototype
+The September 28 implementation used a Python `cryptography` CA to isolate authorization semantics. It implemented client/server credentials, loopback mTLS, a local policy store, four authorization models, kill checks, audit, dynamic-policy experiments, OpenSSL interoperability checks, and certificate-size and timing measurements. Its recorded output is preserved in [`results/2026-09-28/`](../results/2026-09-28/).
 
-Progress Report 2 (Sept 28, explicitly Weeks 5–6) documented a Python `cryptography` research CA, short-lived client/server credentials, loopback mTLS, a local policy store/gateway, four authorization models, kill registry, audit, tests, dynamic policy experiments, OpenSSL interoperability, size scaling, and local decision microbenchmarks. Existing top-level `results/` and `evidence/` preserve that phase. Historic test counts and timings must not be substituted for the current implementation's results.
+A direct-root local CA replaced the planned Step CA deployment. The custom JSON TLS path does not implement MCP. Application-level kill addresses subsequent-call denial separately from certificate revocation, which does not by itself guarantee immediate termination of an established session.
 
-A direct-root local CA replaced Step CA in that prototype to isolate authorization semantics. The custom JSON TLS path is not MCP. Application-level kill replaced the assumption that passive certificate revocation instantly stops a session. These are substantive scope changes to explain, not completed versions of Step CA/ACME/MCP milestones.
+## October extension
 
-## Midterm corrections
+The October comparison adds an opaque bearer token with equivalent server policy. Both credential types use the same initial permissions and request matcher; the certificate models explore different placement and mutation rules.
 
-The current revision adds a fifth comparison: opaque bearer token plus equivalent server policy. The certificate-external model and token model share the initial agent policy and request matcher; certificate-native and reference/ceiling variants expose different placement and mutation semantics.
+Signed resource-owner approval establishes who approves the identity and requested permissions. An issuer adapter verifies that approval and installs initial live policy where applicable. Administration is outside the client request protocol. External, reference, and token policies can expand under a trusted administrator; the ceiling model also enforces the issuer's signed maximum.
 
-A trusted resource-owner allowlist and signed approval establish who approves identity and requested permissions. An issuer adapter verifies approval and installs the initial corresponding live policy. The client protocol has no issuance or administrative endpoint. Live administrators remain authoritative in external/reference/token modes; only the ceiling constrains later administrative expansion to the issuer maximum.
-
-A persistent mTLS/file demonstration now exercises live policy changes and local kill across later calls on the same connection, with actual dispatch counts. A new evaluator separates issuance, DER parsing, trust/profile validation, synthetic session opening, authorization/audit, and local kill-to-denial. Fresh evidence must be generated and dated after code repairs; it must not be backdated into Weeks 5–6.
-
-Package discovery was constrained to the intended Python package. Local installation/test verification and hosted Actions execution are separate claims. The observed hosted block prevented runner startup; it cannot be described as a passing hosted test run.
+The persistent mTLS demo exercises live policy changes and local kill with actual file dispatch. The evaluator separates issuance, DER parsing, profile validation, synthetic session opening, authorization/audit, and local kill-to-denial. The October 5 snapshot is preserved in [`results/2026-10-05/`](../results/2026-10-05/), with its own source hashes and environment. Local verification does not imply a successful hosted Actions run.
 
 ## Literature and bounded contribution
 
@@ -28,9 +24,9 @@ Established prior art already binds identity and authorization. RFC 5755 disting
 
 RFC 5280 defines SAN, EKU and critical-extension rules. SPIFFE constrains URI SAN to one workload identity. Those sources motivate identity in SAN and a private lab extension for experimental authority. Smallstep documents passive revocation as blocking renewal while an issued certificate remains valid until expiry, motivating a separately checked local kill registry.
 
-The MCP authorization page pinned at 2025-11-25 describes OAuth access-token-based HTTP authorization. The experiment does not implement that stack or claim to replace it. WIMSE workload-creds-02 (July 2, 2026) and AIMS-00 (Sept 15, 2026) discuss workload identity and agent authentication/authorization using existing mechanisms. They remain works in progress, not RFC standards. AIMS postdates the original Aug 27/Sept 8 proposals and Sept 14 Report 1; it belongs in the later literature review. See [references](references.md) for exact versions and links.
+The MCP authorization page pinned at 2025-11-25 describes OAuth access-token-based HTTP authorization. The experiment does not implement that stack or claim to replace it. WIMSE workload-creds-02 (July 2, 2026) and AIMS-00 (Sept 15, 2026) discuss workload identity and agent authentication/authorization using existing mechanisms. They remain works in progress, not RFC standards. See [references](references.md) for exact versions and links.
 
-The directly overlapping Sharif agent-identity profile draft-04 (Oct 2, 2026) proposes capability fields, delegation constraints, owner attribution, and kill/revocation endpoints. It is an individual Internet-Draft with no IETF endorsement or formal standards standing. It further limits any novelty claim: this lab compares specific enforcement semantics and costs rather than inventing agent capability certificates, and it does not claim to implement or validate the draft schema. This revision postdates Report 2 and belongs to the midterm literature update.
+The directly overlapping Sharif agent-identity profile draft-04 (Oct 2, 2026) proposes capability fields, delegation constraints, owner attribution, and kill/revocation endpoints. It is an individual Internet-Draft with no IETF endorsement or formal standards standing. It further limits any novelty claim: this lab compares specific enforcement semantics and costs rather than inventing agent capability certificates, and it does not claim to implement or validate the draft schema. This revision was included in the October literature review.
 
 The project's contribution is a bounded, reproducible comparison of authority placement, local mutation, per-call termination, parsing/interoperability, and cost in one controlled tool gateway. It does not establish that agent authorization is otherwise unsolved or that no prior published system has evaluated similar mechanisms.
 

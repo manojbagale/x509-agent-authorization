@@ -4,7 +4,7 @@ import subprocess
 from cryptography.hazmat.primitives import serialization
 
 from agent_auth.pki import ResearchCA
-from agent_auth.experiment import BASE_POLICY
+from agent_auth.scenarios import BASE_POLICY
 
 
 def _verify_with_openssl(tmp_path: Path, *, critical: bool):

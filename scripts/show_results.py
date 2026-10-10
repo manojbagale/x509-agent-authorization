@@ -12,10 +12,10 @@ def yes_no(value: bool) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", nargs="?", type=Path, default=Path("results/midterm/evaluation.json"))
+    parser.add_argument("input", nargs="?", type=Path, default=Path(".local-runs/evaluation.json"))
     args = parser.parse_args()
     if not args.input.is_file():
-        parser.error(f"Evidence file missing: {args.input}. Run python -m agent_auth.evaluation --output-dir results/midterm first.")
+        parser.error(f"Evidence file missing: {args.input}. Run python -m agent_auth.evaluation --output-dir .local-runs first.")
     result = json.loads(args.input.read_text(encoding="utf-8"))
     metadata = result["metadata"]
     print(f"Measured evaluation evidence: {args.input}")
@@ -42,7 +42,7 @@ def main() -> None:
         print()
     print("Repeated matrix cases are deterministic checks, not independent security trials.")
     print("Times describe this local run; certificate and token authentication have different guarantees.")
-    print("Network revocation on a persistent TLS socket is shown separately by midterm_demo.py.")
+    print("Network revocation on a persistent TLS socket is shown separately by demo.py.")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+"""Original four-certificate experiment and certificate-size study."""
 from __future__ import annotations
 
 import csv
@@ -8,58 +9,9 @@ from copy import deepcopy
 from pathlib import Path
 
 from agent_auth.pki import AGENT_URI, ResearchCA
-from agent_auth.gateway import AuthorizationGateway, AuthorizationError, PolicyStore
-
-BASE_POLICY = {
-    "permissions": [
-        {"tool": "file", "action": "read", "resource_prefix": "/research"},
-        {"tool": "dns", "action": "lookup", "resource_prefix": "/fisk.edu"},
-    ]
-}
-
-REQUESTS = [
-    ("allowed_file", {"tool": "file", "action": "read", "resource": "/research/paper.pdf"}, True),
-    ("allowed_nested_file", {"tool": "file", "action": "read", "resource": "/research/papers/x509/paper.pdf"}, True),
-    ("outside_path", {"tool": "file", "action": "read", "resource": "/home/user/.ssh/id_rsa"}, False),
-    ("path_traversal", {"tool": "file", "action": "read", "resource": "/research/../.ssh/id_rsa"}, False),
-    ("prefix_confusion", {"tool": "file", "action": "read", "resource": "/research-old/secret.txt"}, False),
-    ("relative_path", {"tool": "file", "action": "read", "resource": "research/paper.pdf"}, False),
-    ("wrong_action", {"tool": "file", "action": "write", "resource": "/research/paper.pdf"}, False),
-    ("wrong_tool", {"tool": "shell", "action": "execute", "resource": "/bin/sh"}, False),
-    ("allowed_dns", {"tool": "dns", "action": "lookup", "resource": "/fisk.edu/www"}, True),
-    ("outside_dns", {"tool": "dns", "action": "lookup", "resource": "/example.com"}, False),
-]
-
-MODES = ("certificate", "external", "hybrid", "hybrid_ceiling")
-
-
-def pct(values, p):
-    values = sorted(values)
-    if not values:
-        return 0.0
-    idx = min(len(values) - 1, int(round((p / 100) * (len(values) - 1))))
-    return values[idx]
-
-
-def make_store():
-    return PolicyStore({
-        "agents": {AGENT_URI: deepcopy(BASE_POLICY)},
-        "named_policies": {"research-policy-v1": deepcopy(BASE_POLICY)},
-    })
-
-
-def issue_for_mode(ca: ResearchCA, mode: str):
-    if mode == "certificate":
-        return ca.issue_agent(mode=mode, permissions=deepcopy(BASE_POLICY["permissions"]))
-    if mode == "hybrid":
-        return ca.issue_agent(mode=mode, policy_id="research-policy-v1")
-    if mode == "hybrid_ceiling":
-        return ca.issue_agent(
-            mode=mode,
-            policy_id="research-policy-v1",
-            max_permissions=deepcopy(BASE_POLICY["permissions"]),
-        )
-    return ca.issue_agent(mode=mode)
+from agent_auth.gateway import AuthorizationGateway, AuthorizationError
+from agent_auth.scenarios import BASE_POLICY, MODES, REQUESTS, issue_for_mode, make_store
+from agent_auth.evaluation import pct
 
 
 def run_mode(mode: str, iterations: int = 10000):
@@ -240,8 +192,8 @@ def main():
     negatives = negative_identity_tests()
     sizes = certificate_size_scaling()
 
-    out_dir = Path(__file__).resolve().parents[1] / "results"
-    out_dir.mkdir(exist_ok=True)
+    out_dir = Path(__file__).resolve().parents[1] / ".local-runs" / "certificate-study"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     with (out_dir / "summary_v2.json").open("w", encoding="utf-8") as f:
         json.dump({"results": results, "negative_identity_tests": negatives, "certificate_size_scaling": sizes}, f, indent=2)

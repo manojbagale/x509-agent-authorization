@@ -3,7 +3,7 @@ import datetime as dt
 import pytest
 
 from agent_auth.approval import ApprovedIssuer, PermissionAuthority
-from agent_auth.experiment import BASE_POLICY, REQUESTS, make_store
+from agent_auth.scenarios import BASE_POLICY, REQUESTS, make_store
 from agent_auth.gateway import AuthorizationError
 from agent_auth.pki import AGENT_URI, ResearchCA
 from agent_auth.token_baseline import TokenAuthority, TokenGateway

@@ -15,7 +15,10 @@ from typing import Any
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-from agent_auth.gateway import AuthorizationError, AuthorizationGateway, PolicyStore, validate_permissions
+from agent_auth.policy import (
+    AuthorizationError, PolicyStore, canonicalize_resource,
+    resource_matches, validate_permissions,
+)
 from agent_auth.pki import AGENT_URI, ResearchCA, canonical_json
 
 
@@ -59,10 +62,10 @@ class PermissionAuthority:
             raise AuthorizationError("invalid approval policy or lifetime")
         envelope = json.loads(self._envelope)
         for permission in requested_permissions:
-            requested_path = AuthorizationGateway.canonicalize_resource(permission["resource_prefix"])
+            requested_path = canonicalize_resource(permission["resource_prefix"])
             if not any(
                 p["tool"] == permission["tool"] and p["action"] == permission["action"]
-                and AuthorizationGateway._resource_matches(p["resource_prefix"], requested_path)
+                and resource_matches(p["resource_prefix"], requested_path)
                 for p in envelope
             ):
                 raise AuthorizationError("requested permission exceeds resource-owner allowlist")
