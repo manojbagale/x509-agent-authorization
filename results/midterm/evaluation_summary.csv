@@ -1,0 +1,6 @@
+mode,runs,matrix_expected_allows_per_run,matrix_expected_denies_per_run,false_allows_total,false_denies_total,median_run_authorization_p95_ms,median_run_der_parse_ms,median_run_certificate_leaf_issuance_ms,median_run_token_registry_issuance_ms,median_run_trust_profile_validate_ms,median_run_synthetic_session_open_ms,median_run_token_registry_session_open_ms,median_run_local_commit_to_first_denial_ms,narrowing_denied_without_reissue,expansion_allowed_without_reissue
+certificate,10,3,7,0,0,0.022169,0.00173275,0.14217425,,0.09823799999999999,0.248527,,0.00344275,False,False
+external,10,3,7,0,0,0.016925,0.0016575000000000001,0.1180905,,0.09625,0.22417475,,0.00310225,True,True
+hybrid,10,3,7,0,0,0.01704,0.00173225,0.1320115,,0.09704874999999999,0.23503625,,0.00323975,True,True
+hybrid_ceiling,10,3,7,0,0,0.028833,0.0017375,0.14361625,,0.09843575,0.2473175,,0.00336525,True,False
+token,10,3,7,0,0,0.015834,,,0.00482475,,,0.005714,0.0024314999999999996,True,True

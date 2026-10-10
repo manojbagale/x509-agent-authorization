@@ -1,0 +1,351 @@
+{
+  "server": {
+    "tls_version": "TLSv1.3",
+    "cipher": "TLS_AES_256_GCM_SHA384",
+    "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+    "connection_count": 1,
+    "handshake_count": 1,
+    "responses": [
+      {
+        "allowed": true,
+        "reason": "matched_live_policy_and_ceiling",
+        "output": {
+          "content": "Server-private research note: certificate identity is not permission.\n",
+          "bytes_read": 70,
+          "resource": "/research/paper.txt"
+        },
+        "dispatch_count": 1
+      },
+      {
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count": 1
+      },
+      {
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count": 1
+      },
+      {
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count": 1
+      },
+      {
+        "allowed": true,
+        "reason": "matched_live_policy_and_ceiling",
+        "output": {
+          "content": "Server-private research note: certificate identity is not permission.\n",
+          "bytes_read": 70,
+          "resource": "/research/paper.txt"
+        },
+        "dispatch_count": 2
+      },
+      {
+        "allowed": false,
+        "reason": "session_revoked",
+        "dispatch_count": 2
+      },
+      {
+        "allowed": false,
+        "reason": "session_revoked",
+        "dispatch_count": 2
+      }
+    ],
+    "calls": [
+      {
+        "case": "approved_read",
+        "request": {
+          "tool": "file",
+          "action": "read",
+          "resource": "/research/paper.txt"
+        },
+        "allowed": true,
+        "reason": "matched_live_policy_and_ceiling",
+        "dispatch_count_before": 0,
+        "dispatch_count_after": 1,
+        "decision_started_ns": 2441462069214,
+        "decision_ns": 2441462146430,
+        "reply_sent_ns": 2441462204808
+      },
+      {
+        "case": "unauthorized_shell",
+        "request": {
+          "tool": "shell",
+          "action": "execute",
+          "resource": "/bin/sh"
+        },
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count_before": 1,
+        "dispatch_count_after": 1,
+        "decision_started_ns": 2441504415858,
+        "decision_ns": 2441504553115,
+        "reply_sent_ns": 2441504597572
+      },
+      {
+        "case": "unauthorized_path",
+        "request": {
+          "tool": "file",
+          "action": "read",
+          "resource": "/research/../secret.txt"
+        },
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count_before": 1,
+        "dispatch_count_after": 1,
+        "decision_started_ns": 2441504720376,
+        "decision_ns": 2441504785444,
+        "reply_sent_ns": 2441504817152
+      },
+      {
+        "case": "policy_narrowed",
+        "request": {
+          "tool": "file",
+          "action": "read",
+          "resource": "/research/paper.txt"
+        },
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count_before": 1,
+        "dispatch_count_after": 1,
+        "decision_started_ns": 2441504957373,
+        "decision_ns": 2441504999697,
+        "reply_sent_ns": 2441505028580
+      },
+      {
+        "case": "policy_restored",
+        "request": {
+          "tool": "file",
+          "action": "read",
+          "resource": "/research/paper.txt"
+        },
+        "allowed": true,
+        "reason": "matched_live_policy_and_ceiling",
+        "dispatch_count_before": 1,
+        "dispatch_count_after": 2,
+        "decision_started_ns": 2441505150994,
+        "decision_ns": 2441505207039,
+        "reply_sent_ns": 2441505293239
+      },
+      {
+        "case": "revoked_next_call",
+        "request": {
+          "tool": "file",
+          "action": "read",
+          "resource": "/research/paper.txt"
+        },
+        "allowed": false,
+        "reason": "session_revoked",
+        "dispatch_count_before": 2,
+        "dispatch_count_after": 2,
+        "decision_started_ns": 2441505471877,
+        "decision_ns": 2441505481913,
+        "reply_sent_ns": 2441505505248
+      },
+      {
+        "case": "revoked_repeated_call",
+        "request": {
+          "tool": "file",
+          "action": "read",
+          "resource": "/research/paper.txt"
+        },
+        "allowed": false,
+        "reason": "session_revoked",
+        "dispatch_count_before": 2,
+        "dispatch_count_after": 2,
+        "decision_started_ns": 2441505550325,
+        "decision_ns": 2441505556635,
+        "reply_sent_ns": 2441505573831
+      }
+    ],
+    "kill_committed_ns": 2441505401101,
+    "revocation_precondition_allowed": true,
+    "dispatch_count": 2,
+    "audit_log": [
+      {
+        "timestamp": "2026-10-05T23:26:15.008304+00:00",
+        "certificate_serial": "310587734169105622834908408082290651867982255414",
+        "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+        "mode": "hybrid_ceiling",
+        "tool": "file",
+        "action": "read",
+        "resource": "/research/paper.txt",
+        "decision": "ALLOW",
+        "reason": "matched_live_policy_and_ceiling"
+      },
+      {
+        "timestamp": "2026-10-05T23:26:15.050704+00:00",
+        "certificate_serial": "310587734169105622834908408082290651867982255414",
+        "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+        "mode": "hybrid_ceiling",
+        "tool": "shell",
+        "action": "execute",
+        "resource": "/bin/sh",
+        "decision": "DENY",
+        "reason": "outside_scope"
+      },
+      {
+        "timestamp": "2026-10-05T23:26:15.050946+00:00",
+        "certificate_serial": "310587734169105622834908408082290651867982255414",
+        "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+        "mode": "hybrid_ceiling",
+        "tool": "file",
+        "action": "read",
+        "resource": "/research/../secret.txt",
+        "decision": "DENY",
+        "reason": "outside_scope"
+      },
+      {
+        "timestamp": "2026-10-05T23:26:15.051161+00:00",
+        "certificate_serial": "310587734169105622834908408082290651867982255414",
+        "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+        "mode": "hybrid_ceiling",
+        "tool": "file",
+        "action": "read",
+        "resource": "/research/paper.txt",
+        "decision": "DENY",
+        "reason": "outside_scope"
+      },
+      {
+        "timestamp": "2026-10-05T23:26:15.051368+00:00",
+        "certificate_serial": "310587734169105622834908408082290651867982255414",
+        "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+        "mode": "hybrid_ceiling",
+        "tool": "file",
+        "action": "read",
+        "resource": "/research/paper.txt",
+        "decision": "ALLOW",
+        "reason": "matched_live_policy_and_ceiling"
+      },
+      {
+        "timestamp": "2026-10-05T23:26:15.051642+00:00",
+        "certificate_serial": "310587734169105622834908408082290651867982255414",
+        "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+        "mode": "hybrid_ceiling",
+        "tool": "file",
+        "action": "read",
+        "resource": "/research/paper.txt",
+        "decision": "DENY",
+        "reason": "session_revoked"
+      },
+      {
+        "timestamp": "2026-10-05T23:26:15.051719+00:00",
+        "certificate_serial": "310587734169105622834908408082290651867982255414",
+        "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+        "mode": "hybrid_ceiling",
+        "tool": "file",
+        "action": "read",
+        "resource": "/research/paper.txt",
+        "decision": "DENY",
+        "reason": "session_revoked"
+      }
+    ]
+  },
+  "client_responses": [
+    {
+      "allowed": true,
+      "reason": "matched_live_policy_and_ceiling",
+      "output": {
+        "content": "Server-private research note: certificate identity is not permission.\n",
+        "bytes_read": 70,
+        "resource": "/research/paper.txt"
+      },
+      "dispatch_count": 1
+    },
+    {
+      "allowed": false,
+      "reason": "outside_scope",
+      "dispatch_count": 1
+    },
+    {
+      "allowed": false,
+      "reason": "outside_scope",
+      "dispatch_count": 1
+    },
+    {
+      "allowed": false,
+      "reason": "outside_scope",
+      "dispatch_count": 1
+    },
+    {
+      "allowed": true,
+      "reason": "matched_live_policy_and_ceiling",
+      "output": {
+        "content": "Server-private research note: certificate identity is not permission.\n",
+        "bytes_read": 70,
+        "resource": "/research/paper.txt"
+      },
+      "dispatch_count": 2
+    },
+    {
+      "allowed": false,
+      "reason": "session_revoked",
+      "dispatch_count": 2
+    },
+    {
+      "allowed": false,
+      "reason": "session_revoked",
+      "dispatch_count": 2
+    }
+  ],
+  "client_tls_version": "TLSv1.3",
+  "approval": {
+    "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+    "approval_id": "710fc154-8fb1-493f-a11f-0546439553c4",
+    "approved_by": "resource-owner:seminar-admin",
+    "expires_at": "2026-10-05T23:41:15.000659+00:00",
+    "issued_at": "2026-10-05T23:26:15.000659+00:00",
+    "permissions": [
+      {
+        "action": "read",
+        "resource_prefix": "/research",
+        "tool": "file"
+      },
+      {
+        "action": "lookup",
+        "resource_prefix": "/fisk.edu",
+        "tool": "dns"
+      }
+    ],
+    "policy_id": "research-policy-v1",
+    "version": 1
+  },
+  "issuance": {
+    "agent_id": "spiffe://seminar.fisk.edu/agent/research-agent-01",
+    "approval_id": "710fc154-8fb1-493f-a11f-0546439553c4",
+    "approved_by": "resource-owner:seminar-admin",
+    "expires_at": "2026-10-05T23:41:15.000659+00:00",
+    "issued_at": "2026-10-05T23:26:15.000659+00:00",
+    "permissions": [
+      {
+        "action": "read",
+        "resource_prefix": "/research",
+        "tool": "file"
+      },
+      {
+        "action": "lookup",
+        "resource_prefix": "/fisk.edu",
+        "tool": "dns"
+      }
+    ],
+    "policy_id": "research-policy-v1",
+    "version": 1,
+    "certificate_serial": "310587734169105622834908408082290651867982255414",
+    "mode": "hybrid_ceiling"
+  },
+  "mTLS_client_certificate_required": true,
+  "revocation_timing": {
+    "clock": "time.monotonic_ns on one host",
+    "kill_to_next_decision_ms": 0.080812,
+    "kill_to_reply_sent_ms": 0.104147,
+    "kill_to_client_receive_ms": 0.123551,
+    "next_call_decision_ms": 0.010036,
+    "interpretation": "One local sample includes harness scheduling and next-call transport; it is not a distributed revocation bound."
+  },
+  "limitations": [
+    "Single host, trusted harness, one gateway, custom JSON protocol; no MCP or LLM runtime.",
+    "The client must not have direct access to the server private root in a deployment; this demo does not provide OS/network isolation.",
+    "Revocation blocks subsequent admitted calls, not an operation already executing."
+  ]
+}

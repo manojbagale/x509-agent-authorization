@@ -20,7 +20,7 @@ A trusted resource-owner allowlist and signed approval establish who approves id
 
 A persistent mTLS/file demonstration now exercises live policy changes and local kill across later calls on the same connection, with actual dispatch counts. A new evaluator separates issuance, DER parsing, trust/profile validation, synthetic session opening, authorization/audit, and local kill-to-denial. Fresh evidence must be generated and dated after code repairs; it must not be backdated into Weeks 5–6.
 
-Package discovery was constrained to the intended Python package. Local installation/test verification and hosted Actions execution are separate claims. The observed hosted account-billing block prevented runner startup; it cannot be described as a passing hosted test run.
+Package discovery was constrained to the intended Python package. Local installation/test verification and hosted Actions execution are separate claims. The observed hosted block prevented runner startup; it cannot be described as a passing hosted test run.
 
 ## Literature and bounded contribution
 

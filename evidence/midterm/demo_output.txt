@@ -1,0 +1,31 @@
+Actual localhost file-tool demonstration
+Permissions approved by: resource-owner:seminar-admin
+Agent: spiffe://seminar.fisk.edu/agent/research-agent-01
+Transport: TLSv1.3; client certificate required: True
+Connections: 1; handshakes: 1
+Policy changes and revocation below come from the trusted server harness.
+
+1. approved read: ALLOW (matched_live_policy_and_ceiling)
+   Completed file reads: 0 -> 1
+   Actual file content: Server-private research note: certificate identity is not permission.
+2. unauthorized shell: DENY (outside_scope)
+   Completed file reads: 1 -> 1
+3. unauthorized path: DENY (outside_scope)
+   Completed file reads: 1 -> 1
+4. policy narrowed: DENY (outside_scope)
+   Completed file reads: 1 -> 1
+5. policy restored: ALLOW (matched_live_policy_and_ceiling)
+   Completed file reads: 1 -> 2
+6. revoked next call: DENY (session_revoked)
+   Completed file reads: 2 -> 2
+7. revoked repeated call: DENY (session_revoked)
+   Completed file reads: 2 -> 2
+
+Revocation timing: one local sample on the same TLS connection
+Allowed read immediately before kill: True
+Kill commit -> next denied decision: 0.080812 ms
+Kill commit -> client receives denial: 0.123551 ms
+Audit entries: 7; completed file reads: 2
+Scope: local custom JSON protocol; no MCP/LLM integration or OS sandbox.
+Subsequent calls are blocked; an already-running operation is not canceled.
+Complete evidence saved: results/midterm/mtls_recording.json

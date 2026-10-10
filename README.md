@@ -56,11 +56,13 @@ python -m json.tool results/midterm/mtls_output.json
 
 The evaluation creates its output directory. To run the demo alone, create the directory first with `mkdir -p results/midterm`. Inspect `server.calls`, dispatch counts, `approval`, `issuance`, and `revocation_timing` in the demo JSON. A single handshake remains open while live policy changes and local revocation affect later requests.
 
+For recording-friendly output, use `python scripts/midterm_demo.py --output results/midterm/recording_take.json` and `python scripts/show_midterm_results.py`. The first executes the program; the second reads the saved evaluation.
+
 Legacy entry points `python scripts/run_experiments.py` and `python scripts/benchmark.py` cover the earlier four-model experiment. They are not the five-model midterm evaluation.
 
 ## Evidence and interpretation
 
-Existing files directly under `results/` and `evidence/` are historical Weeks 5–6 outputs, associated with the earlier implementation. New evaluation output belongs under `results/midterm/` and must be accompanied by its run metadata. Earlier 20-test/four-model results should not be presented as current test counts or mixed with new timings. No new numerical result is asserted here before regeneration.
+Existing files directly under `results/` and `evidence/` are historical Weeks 5–6 outputs, associated with the earlier implementation. New evaluation output belongs under `results/midterm/` and must be accompanied by its run metadata. Earlier 20-test/four-model results should not be presented as current test counts or mixed with new timings. The verified October 5 results below preserve their own source revision and measurement scope.
 
 The evaluator separates certificate issuance, DER parsing, profile validation, synthetic private-key challenge session opening, token registry operations, authorization including audit, and local kill-to-first-denial. It rotates model order and retains raw samples. Repeated deterministic cases establish bounded correctness, not independent security trials or a guarantee against prompt injection.
 
@@ -68,9 +70,29 @@ The local kill mechanism is distinct from CA revocation. It denies the next admi
 
 The hybrid ceiling demonstrates a narrow invariant: for requests mediated by this gateway, live policy alone cannot authorize outside the signed permission maximum. It does not solve malicious behavior within approved scope, issuer compromise, distributed consistency, or general agent security.
 
+## Verified midterm evidence
+
+The October 5 evaluation began from clean source revision `64410aa66ac40048b2ca24e18c37db9da5064ab8` on Linux x86_64, Python 3.12.14, cryptography 46.0.7 and OpenSSL 3.5.8. The local suite passed **104 tests**.
+
+- [Raw evaluation, distributions, metadata and source hashes](results/midterm/evaluation.json) and [summary CSV](results/midterm/evaluation_summary.csv): 10 rotated runs, 2,000 authorization samples/model/run, 100 warmups, 100 processing samples/model/run, 30 fresh-credential kill trials/model/run.
+- All 50 distinct model/case decisions matched expectations: zero false allows and zero false denies. Repeated runs do not expand that deterministic test matrix.
+- All 1,500 local kill trials denied the next previously allowed call. This measures local subsequent-call denial, not distributed propagation or in-flight cancellation.
+- [Actual network recording](results/midterm/mtls_recording.json) and [readable captured output](evidence/midterm/demo_output.txt): seven calls, one TLS 1.3 connection/handshake, two completed file reads, no dispatch for denied calls.
+- [Local test output](evidence/midterm/pytest.txt), [verification summary](evidence/midterm/verification.json), and [measured authorization figure](evidence/midterm/authorization_p95.png).
+
+| Model | Median of run authorization p95, ms | Median of run local kill-to-denial medians, ms |
+|---|---:|---:|
+| Certificate-native | 0.022169 | 0.003443 |
+| External | 0.016925 | 0.003102 |
+| Hybrid reference | 0.017040 | 0.003240 |
+| Signed ceiling | 0.028833 | 0.003365 |
+| Basic token | 0.015834 | 0.002431 |
+
+These are descriptive in-process values with audit included, excluding tool execution and network transport. The source hashes identify the exact code used; regenerated timings will vary. Certificate and token authentication differ, so these values do not establish production performance or overall superiority.
+
 ## CI status
 
-Packaging was repaired by explicitly limiting package discovery to `agent_auth`, and installation/tests have been checked locally. The observed hosted Actions failure was blocked before runner execution by account billing; it was not a hosted pytest failure. The workflow is configured, but no hosted green result is claimed until a run actually executes. See [Actions](https://github.com/manojbagale/x509-agent-authorization/actions/workflows/ci.yml).
+Packaging was repaired by explicitly limiting package discovery to `agent_auth`, and installation/tests have been checked locally. The observed hosted Actions failure was blocked before runner execution; it was not an executed pytest failure. Account-specific diagnostics are omitted from public evidence. The workflow is configured, but no hosted green result is claimed until a run actually executes. See [Actions](https://github.com/manojbagale/x509-agent-authorization/actions/workflows/ci.yml).
 
 ## Documents and remaining work
 

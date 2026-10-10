@@ -1,0 +1,57 @@
+Measured evaluation evidence: results/midterm/evaluation.json
+Generated UTC: 2026-10-05T23:25:59.417779+00:00
+Runs: 10; authorization samples per run/model: 2000
+Shared request matrix and permissions; in-process stores; audit included.
+
+certificate
+  Static matrix per run: 10 cases (3 expected allows, 7 expected denies)
+  Across runs: 0 false allows, 0 false denies
+  Narrowing denies without reissue: no
+  Expansion allowed without reissue: no
+  Local kill trials: 300/300 denied next previously allowed call
+  Median of per-run authorization p95: 0.022169 ms
+  Median of per-run local commit-to-denial medians: 0.003443 ms
+  Median of per-run DER parse medians: 0.001733 ms
+
+external
+  Static matrix per run: 10 cases (3 expected allows, 7 expected denies)
+  Across runs: 0 false allows, 0 false denies
+  Narrowing denies without reissue: yes
+  Expansion allowed without reissue: yes
+  Local kill trials: 300/300 denied next previously allowed call
+  Median of per-run authorization p95: 0.016925 ms
+  Median of per-run local commit-to-denial medians: 0.003102 ms
+  Median of per-run DER parse medians: 0.001658 ms
+
+hybrid
+  Static matrix per run: 10 cases (3 expected allows, 7 expected denies)
+  Across runs: 0 false allows, 0 false denies
+  Narrowing denies without reissue: yes
+  Expansion allowed without reissue: yes
+  Local kill trials: 300/300 denied next previously allowed call
+  Median of per-run authorization p95: 0.017040 ms
+  Median of per-run local commit-to-denial medians: 0.003240 ms
+  Median of per-run DER parse medians: 0.001732 ms
+
+hybrid_ceiling
+  Static matrix per run: 10 cases (3 expected allows, 7 expected denies)
+  Across runs: 0 false allows, 0 false denies
+  Narrowing denies without reissue: yes
+  Expansion allowed without reissue: no
+  Local kill trials: 300/300 denied next previously allowed call
+  Median of per-run authorization p95: 0.028833 ms
+  Median of per-run local commit-to-denial medians: 0.003365 ms
+  Median of per-run DER parse medians: 0.001737 ms
+
+token
+  Static matrix per run: 10 cases (3 expected allows, 7 expected denies)
+  Across runs: 0 false allows, 0 false denies
+  Narrowing denies without reissue: yes
+  Expansion allowed without reissue: yes
+  Local kill trials: 300/300 denied next previously allowed call
+  Median of per-run authorization p95: 0.015834 ms
+  Median of per-run local commit-to-denial medians: 0.002431 ms
+
+Repeated matrix cases are deterministic checks, not independent security trials.
+Times describe this local run; certificate and token authentication have different guarantees.
+Network revocation on a persistent TLS socket is shown separately by midterm_demo.py.

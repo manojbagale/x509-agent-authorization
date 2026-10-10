@@ -1,0 +1,17 @@
+{
+  "checked_utc": "2026-10-05T23:28:06.204605+00:00",
+  "local_source_revision": "64410aa66ac40048b2ca24e18c37db9da5064ab8",
+  "local_tests": {
+    "command": "python -m pytest",
+    "exit_code": 0,
+    "passed": 104,
+    "python": "3.12.14",
+    "pytest": "9.1.1"
+  },
+  "packaging": "Editable install and wheel build succeeded; isolated wheel imports verified from /tmp/x509-wheel-check.",
+  "hosted_execution": {
+    "tests_executed": false,
+    "status": "blocked before runner startup",
+    "interpretation": "Local passing tests do not assert that the configured hosted Python matrix completed. Account-specific diagnostics are omitted from public evidence."
+  }
+}
