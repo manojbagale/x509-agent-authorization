@@ -30,19 +30,29 @@ def _der_utf8_string(value: str) -> bytes:
 
 
 def _decode_der_utf8_string(data: bytes) -> str:
-    if not data or data[0] != 0x0C:
+    """Decode exactly one minimally encoded DER UTF8String."""
+    if not isinstance(data, bytes) or len(data) < 2 or data[0] != 0x0C:
         raise ValueError("custom extension is not a DER UTF8String")
     first = data[1]
     if first < 128:
         length, offset = first, 2
     else:
         count = first & 0x7F
-        length = int.from_bytes(data[2:2 + count], "big")
+        if count == 0 or count > 4 or len(data) < 2 + count:
+            raise ValueError("invalid DER length")
+        encoded_length = data[2:2 + count]
+        if encoded_length[0] == 0:
+            raise ValueError("non-minimal DER length")
+        length = int.from_bytes(encoded_length, "big")
+        if length < 128:
+            raise ValueError("non-minimal DER length")
         offset = 2 + count
-    payload = data[offset:offset + length]
-    if len(payload) != length:
-        raise ValueError("truncated DER UTF8String")
-    return payload.decode("utf-8")
+    if len(data) != offset + length:
+        raise ValueError("truncated DER UTF8String or trailing data")
+    try:
+        return data[offset:].decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("invalid UTF-8 extension") from exc
 
 
 def canonical_json(obj: Any) -> str:
@@ -56,7 +66,18 @@ def encode_agent_extension(payload: dict[str, Any]) -> bytes:
 
 
 def decode_agent_extension(raw: bytes) -> dict[str, Any]:
-    return json.loads(_decode_der_utf8_string(raw))
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON field")
+            result[key] = value
+        return result
+
+    payload = json.loads(_decode_der_utf8_string(raw), object_pairs_hook=unique_object)
+    if not isinstance(payload, dict):
+        raise ValueError("authorization extension must contain a JSON object")
+    return payload
 
 
 @dataclass
@@ -186,7 +207,9 @@ class ResearchCA:
                 "version": 1,
                 "mode": "hybrid_ceiling",
                 "policy_id": policy_id or "research-policy-v1",
-                "max_permissions": max_permissions or permissions or [],
+                "max_permissions": max_permissions if max_permissions is not None else (
+                    permissions if permissions is not None else []
+                ),
             }
             builder = builder.add_extension(
                 x509.UnrecognizedExtension(AGENT_AUTHZ_OID, encode_agent_extension(payload)),

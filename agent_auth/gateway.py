@@ -4,7 +4,8 @@ import datetime as dt
 import posixpath
 import secrets
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
+from copy import deepcopy
 from urllib.parse import urlparse
 
 from cryptography import x509
@@ -20,7 +21,7 @@ class AuthorizationError(Exception):
     pass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Session:
     serial_number: int
     agent_id: str
@@ -31,26 +32,66 @@ class Session:
     max_permissions: list[dict[str, Any]] | None = None
 
 
+def canonicalize_resource(resource: str) -> str:
+    """Canonicalize a POSIX logical resource; percent characters are literal.
+
+    A dispatcher must use these same semantics. This is not a filesystem
+    symlink or URI-percent-decoding security boundary.
+    """
+    if not isinstance(resource, str) or not resource.startswith("/"):
+        raise AuthorizationError("resource must be an absolute POSIX path")
+    if "\\" in resource or "\x00" in resource:
+        raise AuthorizationError("resource contains unsupported path characters")
+    return "/" + posixpath.normpath(resource).lstrip("/")
+
+
+def validate_permissions(permissions: Any) -> list[dict[str, str]]:
+    if not isinstance(permissions, list):
+        raise AuthorizationError("permissions must be a list")
+    validated = []
+    for permission in permissions:
+        if not isinstance(permission, dict) or set(permission) != {"tool", "action", "resource_prefix"}:
+            raise AuthorizationError("permission requires tool, action and resource_prefix")
+        if any(not isinstance(value, str) or not value for value in permission.values()):
+            raise AuthorizationError("permission fields must be nonempty strings")
+        validated.append({**permission, "resource_prefix": canonicalize_resource(permission["resource_prefix"])})
+    return validated
+
+
+def validate_policy(policy: Any) -> dict[str, Any]:
+    if not isinstance(policy, dict) or "permissions" not in policy:
+        raise AuthorizationError("policy requires permissions")
+    return {**deepcopy(policy), "permissions": validate_permissions(policy["permissions"])}
+
+
 class PolicyStore:
+    """Trusted control-plane configuration, never exposed as an agent tool.
+
+    Copies prevent callers from silently changing a policy outside replacement.
+    Replacements are validated when evaluated so unavailable/malformed runtime
+    configuration denies requests rather than granting wider authority.
+    """
     def __init__(self, policies: dict[str, Any]):
-        self.policies = policies
+        self.policies = deepcopy(policies)
 
     def get_agent_policy(self, agent_id: str) -> dict[str, Any]:
-        return self.policies["agents"][agent_id]
+        return deepcopy(self.policies["agents"][agent_id])
 
     def get_named_policy(self, policy_id: str) -> dict[str, Any]:
-        return self.policies["named_policies"][policy_id]
+        return deepcopy(self.policies["named_policies"][policy_id])
 
     def replace_named_policy(self, policy_id: str, policy: dict[str, Any]) -> None:
-        self.policies["named_policies"][policy_id] = policy
+        self.policies["named_policies"][policy_id] = deepcopy(policy)
 
     def replace_agent_policy(self, agent_id: str, policy: dict[str, Any]) -> None:
-        self.policies["agents"][agent_id] = policy
+        self.policies["agents"][agent_id] = deepcopy(policy)
 
 
 class AuthorizationGateway:
-    def __init__(self, ca: ResearchCA, policy_store: PolicyStore):
+    def __init__(self, ca: ResearchCA, policy_store: PolicyStore, *,
+                 clock: Callable[[], dt.datetime] | None = None):
         self.ca = ca
+        self._clock = clock or (lambda: dt.datetime.now(dt.timezone.utc))
         self.policy_store = policy_store
         self.kill_registry: set[int] = set()
         self.audit_log: list[dict[str, Any]] = []
@@ -61,7 +102,7 @@ class AuthorizationGateway:
         This deliberately handles the single-root, direct-leaf research profile.
         A production implementation should use a full PKIX path validator.
         """
-        now = dt.datetime.now(dt.timezone.utc)
+        now = self._clock()
         if not (cert.not_valid_before_utc <= now <= cert.not_valid_after_utc):
             raise AuthorizationError("certificate expired or not yet valid")
         if cert.issuer != self.ca.cert.subject:
@@ -72,8 +113,18 @@ class AuthorizationGateway:
                 cert.tbs_certificate_bytes,
                 ec.ECDSA(cert.signature_hash_algorithm),
             )
-        except InvalidSignature as exc:
+        except (InvalidSignature, ValueError, TypeError) as exc:
             raise AuthorizationError("invalid certificate signature") from exc
+
+        supported_critical = {
+            ExtensionOID.BASIC_CONSTRAINTS, ExtensionOID.KEY_USAGE,
+            ExtensionOID.EXTENDED_KEY_USAGE, ExtensionOID.SUBJECT_ALTERNATIVE_NAME,
+            ExtensionOID.SUBJECT_KEY_IDENTIFIER, ExtensionOID.AUTHORITY_KEY_IDENTIFIER,
+            AGENT_AUTHZ_OID,
+        }
+        for extension in cert.extensions:
+            if extension.critical and extension.oid not in supported_critical:
+                raise AuthorizationError("unsupported critical certificate extension")
 
         try:
             bc = cert.extensions.get_extension_for_oid(ExtensionOID.BASIC_CONSTRAINTS).value
@@ -109,11 +160,18 @@ class AuthorizationGateway:
         try:
             ext = cert.extensions.get_extension_for_oid(AGENT_AUTHZ_OID).value
             payload = decode_agent_extension(ext.value)
-            if payload.get("version") != 1:
+            if type(payload.get("version")) is not int or payload["version"] != 1:
                 raise AuthorizationError("unsupported authorization extension version")
             mode = payload["mode"]
             if mode not in {"certificate", "hybrid", "hybrid_ceiling"}:
                 raise AuthorizationError("unknown authorization mode")
+            if mode == "certificate":
+                validate_permissions(payload.get("permissions"))
+            else:
+                if not isinstance(payload.get("policy_id"), str) or not payload["policy_id"]:
+                    raise AuthorizationError("hybrid certificate requires policy_id")
+                if mode == "hybrid_ceiling":
+                    validate_permissions(payload.get("max_permissions"))
             return mode, payload
         except x509.ExtensionNotFound:
             return "external", None
@@ -156,14 +214,7 @@ class AuthorizationGateway:
     def kill(self, session: Session) -> None:
         self.kill_registry.add(session.serial_number)
 
-    @staticmethod
-    def canonicalize_resource(resource: str) -> str:
-        if not resource.startswith("/"):
-            raise AuthorizationError("resource must be an absolute path")
-        normalized = posixpath.normpath(resource)
-        if not normalized.startswith("/"):
-            normalized = "/" + normalized
-        return normalized
+    canonicalize_resource = staticmethod(canonicalize_resource)
 
     @staticmethod
     def _resource_matches(allowed_prefix: str, resource: str) -> bool:
@@ -175,19 +226,21 @@ class AuthorizationGateway:
     @classmethod
     def _matches(cls, permissions: list[dict[str, Any]], request: dict[str, str]) -> bool:
         resource = cls.canonicalize_resource(request["resource"])
-        for p in permissions:
+        for p in validate_permissions(permissions):
             if p.get("tool") != request["tool"]:
                 continue
             if p.get("action") != request["action"]:
                 continue
             prefix = p.get("resource_prefix")
-            if prefix is None or cls._resource_matches(prefix, resource):
+            if cls._resource_matches(prefix, resource):
                 return True
         return False
 
     def _policy_for_session(self, session: Session) -> dict[str, Any]:
         if session.mode == "certificate":
-            return session.embedded_policy or {"permissions": []}
+            # Reconstruct authority from immutable signed bytes, not cached lists.
+            _, payload = self._decode_mode(session.cert)
+            return payload
         if session.mode == "external":
             return self.policy_store.get_agent_policy(session.agent_id)
         if session.mode in {"hybrid", "hybrid_ceiling"}:
@@ -197,22 +250,29 @@ class AuthorizationGateway:
         raise AuthorizationError("unknown authorization mode")
 
     def authorize(self, session: Session, request: dict[str, str]) -> tuple[bool, str]:
+        if not isinstance(request, dict) or set(request) != {"tool", "action", "resource"} or any(
+            not isinstance(value, str) or not value for value in request.values()
+        ):
+            decision = (False, "invalid_request")
+            self._audit(session, request, *decision)
+            return decision
         if session.serial_number in self.kill_registry:
             decision = (False, "session_revoked")
             self._audit(session, request, *decision)
             return decision
 
-        now = dt.datetime.now(dt.timezone.utc)
+        now = self._clock()
         if not (session.cert.not_valid_before_utc <= now <= session.cert.not_valid_after_utc):
             decision = (False, "certificate_expired")
             self._audit(session, request, *decision)
             return decision
 
         try:
-            policy = self._policy_for_session(session)
+            policy = validate_policy(self._policy_for_session(session))
             live_match = self._matches(policy.get("permissions", []), request)
             if session.mode == "hybrid_ceiling":
-                ceiling_match = self._matches(session.max_permissions or [], request)
+                _, signed_payload = self._decode_mode(session.cert)
+                ceiling_match = self._matches(signed_payload["max_permissions"], request)
                 allowed = live_match and ceiling_match
                 reason = "matched_live_policy_and_ceiling" if allowed else (
                     "outside_signed_ceiling" if live_match and not ceiling_match else "outside_scope"
@@ -230,6 +290,7 @@ class AuthorizationGateway:
         return decision
 
     def _audit(self, session: Session, request: dict[str, str], allowed: bool, reason: str) -> None:
+        request = request if isinstance(request, dict) else {}
         self.audit_log.append({
             "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(),
             "certificate_serial": str(session.serial_number),

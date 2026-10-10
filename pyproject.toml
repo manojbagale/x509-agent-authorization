@@ -19,3 +19,7 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.setuptools.packages.find]
+include = ["agent_auth*"]
+exclude = ["tests*", "results*", "evidence*"]

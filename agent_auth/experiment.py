@@ -108,6 +108,13 @@ def run_mode(mode: str, iterations: int = 10000):
     shell_request = {"tool": "shell", "action": "execute", "resource": "/bin/sh"}
     post_expand_allowed, post_expand_reason = gw.authorize(session, shell_request)
 
+    # Revocation must turn a previously allowed operation into a denial.
+    # Restore live permissions after the independent policy-expansion trial.
+    if mode == "external":
+        store.replace_agent_policy(AGENT_URI, deepcopy(BASE_POLICY))
+    elif mode in {"hybrid", "hybrid_ceiling"}:
+        store.replace_named_policy("research-policy-v1", deepcopy(BASE_POLICY))
+    assert gw.authorize(session, REQUESTS[0][1])[0], "revocation trial needs an allowed precondition"
     start = time.perf_counter_ns()
     gw.kill(session)
     kill_allowed, kill_reason = gw.authorize(session, REQUESTS[0][1])
