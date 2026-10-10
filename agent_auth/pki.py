@@ -149,7 +149,7 @@ class ResearchCA:
         policy_id: str | None = None,
         max_permissions: list[dict[str, Any]] | None = None,
         lifetime_minutes: int = 15,
-        backdate_minutes: int = 1,
+        backdate_minutes: int = 0,
         extension_critical: bool = False,
         agent_uri: str = AGENT_URI,
         extra_uri_sans: list[str] | None = None,

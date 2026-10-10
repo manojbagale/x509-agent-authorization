@@ -1,26 +1,22 @@
-# References
+# Primary references
 
-Primary standards and first-party sources used to shape the experiment:
+Primary pages checked October 5, 2026. Links to drafts and MCP use explicit versions where possible so the research does not silently change when a newer version appears. Standards provide design context; citing them does not mean this prototype implements them in full.
 
-1. **RFC 5280** — Internet X.509 Public Key Infrastructure Certificate and CRL Profile.  
-   https://www.rfc-editor.org/rfc/rfc5280
-2. **RFC 5755** — An Internet Attribute Certificate Profile for Authorization.  
-   https://www.rfc-editor.org/rfc/rfc5755
-3. **RFC 8705** — OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens.  
-   https://www.rfc-editor.org/rfc/rfc8705
-4. **RFC 9396** — OAuth 2.0 Rich Authorization Requests.  
-   https://www.rfc-editor.org/rfc/rfc9396
-5. **SPIFFE X.509-SVID** — Workload identity profile.  
-   https://spiffe.io/docs/latest/spiffe-specs/x509-svid/
-6. **WIMSE Workload Credentials** — IETF Internet-Draft.  
-   https://datatracker.ietf.org/doc/draft-ietf-wimse-workload-creds/
-7. **AI Identity Management System (AIMS)** — IETF WIMSE Working Group Internet-Draft.  
-   https://datatracker.ietf.org/doc/draft-ietf-wimse-aims/
-8. **Model Context Protocol Authorization** — MCP specification.  
-   https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization
-9. **Smallstep certificate revocation** — step-ca documentation.  
-   https://smallstep.com/docs/step-ca/revocation/
-10. **X.509 Certificate Profile for Autonomous AI Agent Identity** — individual Internet-Draft; emerging work, not an IETF standard.  
-    https://datatracker.ietf.org/doc/draft-sharif-x509-agent-identity-profile/
-11. J. H. Saltzer and M. D. Schroeder, **The Protection of Information in Computer Systems**, Proceedings of the IEEE, 1975.  
-    https://web.mit.edu/saltzer/www/publications/protection/
+| Source | Exact status/date | Relevance and implementation boundary |
+|---|---|---|
+| [RFC 5280](https://datatracker.ietf.org/doc/html/rfc5280), Cooper et al., *Internet X.509 Public Key Infrastructure Certificate and CRL Profile* | Standards Track, May 2008 | §4.2 critical-extension behavior; §4.2.1.6 SAN; §4.2.1.12 EKU; §6 path validation. Lab performs direct-root profile checks, not full generic PKIX. |
+| [RFC 5755](https://www.rfc-editor.org/rfc/rfc5755), Farrell, Housley and Turner, *An Internet Attribute Certificate Profile for Authorization* | Standards Track, January 2010 | §1 is prior art for identity/authorization separation and different lifetimes/issuers. The lab private extension is not an RFC 5755 attribute certificate. |
+| [RFC 8705](https://www.rfc-editor.org/rfc/rfc8705), Campbell et al., *OAuth 2.0 Mutual-TLS Client Authentication and Certificate-Bound Access Tokens* | Standards Track, February 2020 | §2 client authentication and §3 certificate-bound tokens establish an existing hybrid mechanism. The basic lab token is bearer-only, not certificate bound. |
+| [RFC 9396](https://www.rfc-editor.org/rfc/rfc9396), Lodderstedt, Richer and Campbell, *OAuth 2.0 Rich Authorization Requests* | Standards Track, May 2023 | Structured `authorization_details` is fine-grained authorization prior art. Lab JSON is not this OAuth extension. |
+| [SPIFFE X.509-SVID](https://spiffe.io/docs/latest/spiffe-specs/x509-svid/) | SPIFFE specification; accessed Oct 5, 2026 | Exactly one URI SAN/workload identity informs the lab profile. No SPIRE deployment or complete conformance certification is claimed. |
+| [Smallstep certificate revocation](https://smallstep.com/docs/step-ca/revocation/) | First-party product documentation; accessed Oct 5, 2026 | Passive revocation blocks renewal; the existing certificate remains valid until expiry. Local application kill is a distinct mechanism. No deployed step-ca revocation test is claimed. |
+| [MCP Authorization, 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) | Versioned MCP specification page | HTTP authorization uses OAuth/access tokens and resource-owner authorization. Current custom JSON TLS demo is not a conforming MCP/OAuth implementation. This reference makes no claim to be the newest MCP version. |
+| [WIMSE Workload Credentials, draft-ietf-wimse-workload-creds-02](https://datatracker.ietf.org/doc/html/draft-ietf-wimse-workload-creds-02), Campbell et al. | Working-group Internet-Draft, July 2, 2026; intended Standards Track; work in progress | Workload identity credentials and proof-of-possession context. A draft is not an RFC. |
+| [AI Identity Management System, draft-ietf-wimse-aims-00](https://datatracker.ietf.org/doc/html/draft-ietf-wimse-aims-00), Kasselman et al. | Working-group Internet-Draft, Sept 15, 2026; intended Informational; work in progress | Applies existing standards to agent authentication/authorization and separates supporting lifecycle functions. Postdates original proposals/Report 1. |
+| [X.509 Certificate Profile for Autonomous AI Agent Identity, draft-sharif-x509-agent-identity-profile-04](https://datatracker.ietf.org/doc/html/draft-sharif-x509-agent-identity-profile-04), Raza Sharif | Individual Internet-Draft, Oct 2, 2026; work in progress; not IETF endorsed | Direct overlapping prior work proposes capabilities, delegation constraints, owner attribution, and revocation/kill endpoints in an AgentIdentity extension. The lab does not implement or empirically validate this draft profile. |
+| [OpenID AuthZEN Authorization API 1.0](https://openid.net/specs/authorization-api-1_0.html) | OpenID Foundation specification; accessed Oct 5, 2026 | Subject/action/resource/context external-decision vocabulary. No networked AuthZEN PDP implementation is claimed. |
+| [Saltzer and Schroeder, *The Protection of Information in Computer Systems*](https://web.mit.edu/saltzer/www/publications/protection/) | Proceedings of the IEEE 63(9), 1278–1308, 1975 | Least privilege and complete mediation guide the gateway architecture. Actual deployed bypass resistance still requires OS/network isolation. |
+
+The research position is comparative and empirical. These sources already establish certificate extensions, attribute authorization, workload identity, structured OAuth authorization and certificate-bound tokens. A reproducible local study can examine their design trade-offs without claiming to invent certificate-based authorization or proving that no similar published evaluation exists.
+
+Earlier reports cited moving draft URLs and a different MCP version. Use the version actually consulted for each claim. Do not silently substitute later source text into the historical Weeks 1–6 record. Unsupported incident-causality claims, survey percentages, and the unverified Johnson/Lee citation from A1 are omitted from this verified list.

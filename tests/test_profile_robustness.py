@@ -140,3 +140,9 @@ def test_explicit_empty_signed_ceiling_is_not_replaced_by_permissions():
                             permissions=deepcopy(BASE_POLICY["permissions"]))
     session = gw.open_session(issued.cert, issued.key)
     assert gw.authorize(session, REQUESTS[0][1]) == (False, "outside_signed_ceiling")
+
+
+def test_default_agent_certificate_has_at_most_fifteen_minute_validity_span():
+    import datetime as dt
+    issued = ResearchCA.create().issue_agent(mode="external")
+    assert issued.cert.not_valid_after_utc - issued.cert.not_valid_before_utc <= dt.timedelta(minutes=15)

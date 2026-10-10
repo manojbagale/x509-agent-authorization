@@ -1,168 +1,82 @@
 # X.509 Authorization for AI Agents
 
-[![tests](https://github.com/manojbagale/x509-agent-authorization/actions/workflows/ci.yml/badge.svg)](https://github.com/manojbagale/x509-agent-authorization/actions/workflows/ci.yml)
+A Senior Seminar research prototype comparing where tool permissions should live: in a signed X.509 credential, in server-side policy, or in both.
 
-A research prototype for one question:
+The research question is: **how much of an agent's authority should be bound to its credential, and which decisions should remain changeable at runtime?** Authentication establishes an identity or credential holder; a separate authorization check decides whether a particular tool/action/resource is permitted.
 
-> **How much of an AI agent's authority should be carried in an X.509 credential, and which authorization decisions should remain in a live policy system?**
+## Scope and comparison
 
-AI agents increasingly call real tools: filesystems, APIs, databases, shell commands, and cloud services. Once an agent can act, authentication is not enough. A correctly authenticated agent can still attempt an action it should not be allowed to perform.
+This is a controlled, single-agent, single-host Python experiment. Its network demonstration uses a custom JSON protocol over localhost TLS 1.3 and a real read-only file tool. It is not an MCP SDK integration, an LLM benchmark, a deployed Step CA, an OAuth authorization server, or an agent sandbox.
 
-This project studies X.509 as the cryptographic identity layer and experimentally compares four ways to enforce least privilege at the tool boundary.
+| Model / code mode | Presented credential | Permission source | Live narrowing | Live administrative expansion without reissue |
+|---|---|---|---|---|
+| Certificate-native / `certificate` | X.509 identity + permissions | Signed extension | No; full credential kill is separate | No |
+| External / `external` | Identity-only X.509 | Agent policy in server store | Yes | Yes |
+| Hybrid reference / `hybrid` | X.509 identity + policy ID | Named server policy | Yes | Yes |
+| Hybrid signed ceiling / `hybrid_ceiling` | X.509 identity + policy ID + maximum permissions | Intersection of live policy and signed maximum | Yes | Only within signed maximum |
+| Basic token / `token` | Random opaque bearer reference | Agent policy in server store | Yes | Yes |
 
-## Why this project exists
+The external model supplies the equivalent server-side policy comparison. The token model supplies a basic token-based comparison using the same request matcher and initial permissions. It uses a trusted in-memory registry and a 32-byte random secret presented as 64 hexadecimal characters. It is neither a JWT nor an RFC 8705 certificate-bound access token. Bearer possession and mTLS private-key possession provide different authentication guarantees; their session-opening timings are not interchangeable speed comparisons.
 
-The security goal is **containment**, not perfect prevention. Assume an agent can eventually be manipulated, compromised, or simply make a bad decision. The surrounding system should still bound what that agent can do.
+## Who approves permissions
 
-```mermaid
-flowchart LR
-    A[AI Agent] -->|mTLS + tool request| G[Authorization Gateway]
-    C[X.509 Credential] --> G
-    P[Live Policy Store] --> G
-    G -->|ALLOW| T[Protected Tool]
-    G -->|DENY| D[Stop request]
-```
+The trusted resource owner (`resource-owner:seminar-admin` in the lab) configures an allowlist and approved agent identities. `PermissionAuthority` rejects requests exceeding that allowlist, then signs the approved identity, permission set, policy ID, approver, approval ID, and expiry with an Ed25519 key. `ApprovedIssuer` verifies the configured owner key before issuing a short-lived credential. This is a programmatic control-plane demonstration, not a human-consent UI.
 
-The gateway is intentionally outside the agent's trust boundary. The protected tool is expected to be reachable only through that gateway.
-
-## Authorization models
-
-| Model | X.509 carries | Live policy | Key trade-off |
-|---|---|---|---|
-| **Certificate-native** | identity + permissions | No | signed and self-contained, but authority is static until reissuance/expiry |
-| **External** | identity only | Yes | easy to change at runtime, but policy becomes an online dependency |
-| **Hybrid reference** | identity + policy ID | Yes | binds a session to a policy reference, but live policy can still broaden authority |
-| **Hybrid signed ceiling** | identity + policy ID + maximum permissions | Yes | live policy can narrow authority but cannot expand past the signed ceiling |
-
-The fourth model is the most important refinement in the current prototype: it separates **who may change policy at runtime** from **the maximum authority the certificate issuer signed**.
+The owner key, CA key, registry, policy mutation, and kill operations belong to the trusted harness/control plane; none is exposed as a client tool-call endpoint. The issuer adapter installs the approved initial live policy for external, reference, ceiling, and token modes. After issuance, the live policy administrator is deliberately authoritative for external/reference/token models and may broaden those policies. The signed-ceiling model also requires a match against the immutable issuer maximum. Initial approval does not make an external policy an immutable ceiling.
 
 ## What is implemented
 
-- Local ECDSA research CA and short-lived X.509 agent certificates
-- URI SAN workload identity under `spiffe://seminar.fisk.edu/agent/...`
-- Basic Constraints, Key Usage, and `clientAuth` EKU profile checks
-- Experimental private X.509 extension for certificate-carried authorization
-- Four authorization modes using the same request matrix
-- Real localhost **TLS 1.3 mutual authentication** demo
-- Per-request complete mediation at an authorization gateway
-- Deny-by-default tool/action/resource matching
-- Resource canonicalization for traversal and prefix-confusion cases
-- Runtime kill registry
-- Negative credential/profile tests
-- OpenSSL critical-extension interoperability experiment
-- Certificate-size scaling measurements
-- Repeated local latency measurements
+- Local P-256 research CA, short-lived client credentials, SPIFFE-style URI SAN identity, and client profile checks.
+- Versioned experimental authorization extension with strict payload validation; identity stays in SAN and key purpose stays in EKU.
+- Five controlled authorization models; identical initial policy, request matrix, matching, expiry/revocation checks, and audit behavior.
+- Per-call validity and local kill checks, live policy reevaluation, and issuer-ceiling intersection where selected.
+- Signed owner-approval workflow, negative approval controls, and immutable session authority checks.
+- Persistent TLS 1.3 mTLS connection with seven requests: allowed read, forbidden shell, forbidden path, live narrowing, restoration, kill denial, repeated kill denial.
+- Actual file dispatch after authorization; denied calls do not invoke the dispatcher. POSIX directory-descriptor traversal rejects symlinks and nonregular files, with a fixed 4,096-byte tool limit.
+- Negative profile/parser/policy/lifecycle tests and OpenSSL critical-extension experiment.
+- Reproducible measurement entry point with raw samples, environment, source hashes, and precise timing scopes.
 
-> [!WARNING]
-> This is a research prototype, not a production PKI or policy engine. It deliberately uses a small trust model and simplified application policy so individual security properties can be tested clearly.
+The network demo proves this dispatch path on one connection. The client and trusted server run on one host, and the harness holds both sides' objects. It does not prove OS/network isolation against a compromised local process. DNS cases are logical authorization requests, not a DNS resolver implementation; no shell tool executes.
 
-## Current results
+## Run and inspect
 
-The current test suite contains **20 passing tests**.
-
-Across the bounded 10-request correctness matrix for each of the four authorization modes:
-
-- false allows: **0**
-- false denies: **0**
-
-Additional negative tests verify rejection of a wrong private key, expired credential, wrong issuer, CA certificate used as a leaf, wrong trust domain, and multiple URI SAN identities.
-
-### Dynamic policy behavior
-
-| Model | Runtime narrowing | Runtime expansion without reissue |
-|---|---:|---:|
-| Certificate-native | No | No |
-| External | Yes | Yes |
-| Hybrid reference | Yes | Yes |
-| Hybrid signed ceiling | Yes | **No** |
-
-This is the central experimental result so far. A policy reference alone does not cryptographically prevent later privilege expansion. The signed-ceiling variant does.
-
-### Certificate size
-
-Median DER size across 15 independently issued certificates per point:
-
-| Permissions | Certificate-native | External | Hybrid reference | Hybrid signed ceiling |
-|---:|---:|---:|---:|---:|
-| 0 | 557 B | 488 B | 570 B | 599 B |
-| 1 | 633 B | 488 B | 570 B | 675 B |
-| 10 | 1,304 B | 488 B | 570 B | 1,344 B |
-| 100 | 7,964 B | 488 B | 570 B | 8,004 B |
-
-Certificate-native authority grows with the number of embedded permissions. External and policy-reference certificates remain effectively constant in this experiment.
-
-### Local latency
-
-Across 10 repeated in-process runs, median p95 policy-decision latency was approximately:
-
-- certificate-native: **0.0066 ms**
-- external: **0.0067 ms**
-- hybrid reference: **0.0068 ms**
-- hybrid signed ceiling: **0.0078 ms**
-
-These numbers are only a Python/local microbenchmark. They do **not** represent production network latency or throughput.
-
-### mTLS proof of possession
-
-The network demo completed a real localhost TLS 1.3 mutual-authentication handshake using the research CA. The gateway extracted the peer certificate after the TLS handshake, opened an application session, allowed an in-scope file read, and denied an unauthorized shell request.
-
-See [`results/mtls_output.json`](results/mtls_output.json).
-
-### Critical-extension interoperability
-
-RFC 5280 requires an implementation to reject a certificate containing an unrecognized **critical** extension. The prototype reproduces that trade-off with OpenSSL:
-
-- non-critical experimental authorization extension → generic OpenSSL verification succeeds
-- critical experimental authorization extension → OpenSSL fails with `unhandled critical extension`
-
-See [`evidence/`](evidence/).
-
-## Run it
+Use Ubuntu, Linux, or Ubuntu under WSL, Python 3.11+, and OpenSSL. The file dispatcher relies on POSIX `dir_fd`, `O_DIRECTORY`, and `O_NOFOLLOW`; the full demo is not supported in native Windows Python. The CI configuration targets Ubuntu with Python 3.11–3.13.
 
 ```bash
 git clone https://github.com/manojbagale/x509-agent-authorization.git
 cd x509-agent-authorization
-
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
-
-pytest
-python scripts/run_experiments.py
-python -m agent_auth.mtls_demo
-python scripts/benchmark.py
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+python -m pytest
+python -m agent_auth.evaluation --runs 10 --iterations 2000 --warmup 100 --output-dir results/midterm
+python -m agent_auth.mtls_demo > results/midterm/mtls_output.json
+python -m json.tool results/midterm/mtls_output.json
 ```
 
-## Repository layout
+The evaluation creates its output directory. To run the demo alone, create the directory first with `mkdir -p results/midterm`. Inspect `server.calls`, dispatch counts, `approval`, `issuance`, and `revocation_timing` in the demo JSON. A single handshake remains open while live policy changes and local revocation affect later requests.
 
-```text
-agent_auth/                 core PKI, gateway, experiment, and mTLS code
-scripts/                    experiment/evidence entry points
-tests/                      correctness, profile, interoperability, and mTLS tests
-results/                    measured outputs used in the research report
-evidence/                   OpenSSL verification and certificate inspection output
-docs/                       research notes, experiment design, and references
-.github/workflows/ci.yml    test matrix for Python 3.11–3.13
-```
+Legacy entry points `python scripts/run_experiments.py` and `python scripts/benchmark.py` cover the earlier four-model experiment. They are not the five-model midterm evaluation.
 
-## Research interpretation
+## Evidence and interpretation
 
-The current evidence supports a narrower claim than "put permissions in certificates":
+Existing files directly under `results/` and `evidence/` are historical Weeks 5–6 outputs, associated with the earlier implementation. New evaluation output belongs under `results/midterm/` and must be accompanied by its run metadata. Earlier 20-test/four-model results should not be presented as current test counts or mixed with new timings. No new numerical result is asserted here before regeneration.
 
-1. **X.509 is a strong fit for cryptographic workload identity and key possession.**
-2. **Certificate-carried authorization can work for stable, issuer-bounded, session-scoped authority.**
-3. **A live policy plane is much better at rapid authorization changes and remediation.**
-4. **A policy reference alone is not an authority ceiling.** If the referenced policy can later broaden, the agent can gain authority without certificate reissuance.
-5. **A hybrid signed ceiling is a promising compromise:** the certificate bounds maximum authority while the online policy can narrow it dynamically.
+The evaluator separates certificate issuance, DER parsing, profile validation, synthetic private-key challenge session opening, token registry operations, authorization including audit, and local kill-to-first-denial. It rotates model order and retains raw samples. Repeated deterministic cases establish bounded correctness, not independent security trials or a guarantee against prompt injection.
 
-That interpretation is consistent with established separation between identity credentials and authorization data in standards such as RFC 5755 and RFC 8705, while still leaving a useful experimental role for X.509-carried capability information.
+The local kill mechanism is distinct from CA revocation. It denies the next admitted call after a serial/token digest is killed; it does not cancel an operation already executing. Single-process measurement and one localhost network sample do not establish a distributed propagation bound. Smallstep's passive revocation stops renewal but leaves an existing certificate usable until expiry.
 
-## Research notes and sources
+The hybrid ceiling demonstrates a narrow invariant: for requests mediated by this gateway, live policy alone cannot authorize outside the signed permission maximum. It does not solve malicious behavior within approved scope, issuer compromise, distributed consistency, or general agent security.
 
-- [Experiment design](docs/experiment-design.md)
-- [Weeks 5–6 research notes](docs/research-notes.md)
-- [Primary references](docs/references.md)
+## CI status
 
-## Status
+Packaging was repaired by explicitly limiting package discovery to `agent_auth`, and installation/tests have been checked locally. The observed hosted Actions failure was blocked before runner execution by account billing; it was not a hosted pytest failure. The workflow is configured, but no hosted green result is claimed until a run actually executes. See [Actions](https://github.com/manojbagale/x509-agent-authorization/actions/workflows/ci.yml).
 
-Active senior-seminar research. The next phase is to move beyond the local prototype: strengthen PKIX validation, put the gateway in front of a real MCP tool path, expand argument-level policies, and measure networked authorization and revocation behavior under concurrency.
+## Documents and remaining work
+
+- [Experiment design and measurement definitions](docs/experiment-design.md)
+- [Research history and proposal comparison](docs/research-notes.md)
+- [Verified primary references](docs/references.md)
+- [Security boundary and limitations](SECURITY.md)
+
+Remaining work includes a real MCP tool path, distributed policy/kill state, deployment isolation, stronger PKIX validation and issuing hierarchy, richer resource/argument semantics, and concurrency/failure measurements. These are separate milestones rather than claims about the current lab.
