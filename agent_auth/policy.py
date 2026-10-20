@@ -10,6 +10,10 @@ class AuthorizationError(Exception):
     pass
 
 
+class PolicyServiceError(AuthorizationError):
+    """A remote decision was unavailable or invalid; deny access."""
+
+
 def canonicalize_resource(resource: str) -> str:
     """Canonicalize a POSIX logical resource; percent characters are literal.
 

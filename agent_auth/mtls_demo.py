@@ -54,8 +54,8 @@ def _valid_request(request: dict) -> bool:
     )
 
 
-def run_mtls_demo() -> dict:
-    """Exercise seven tool calls on one authenticated TLS 1.3 connection.
+def run_mtls_demo(*, policy_service=None) -> dict:
+    """Exercise tool calls on one authenticated TLS 1.3 connection.
 
     Trusted harness events change policy/kill state outside the client protocol.
     This is a local custom JSON file-tool demo, not a complete MCP/LLM integration,
@@ -66,7 +66,7 @@ def run_mtls_demo() -> dict:
         "agents": {AGENT_URI: deepcopy(BASE_POLICY)},
         "named_policies": {"research-policy-v1": deepcopy(BASE_POLICY)},
     })
-    gateway = AuthorizationGateway(ca, store)
+    gateway = AuthorizationGateway(ca, store, policy_decider=policy_service.client if policy_service else None)
     authority = PermissionAuthority.create(allowed_permissions=BASE_POLICY["permissions"])
     grant = authority.approve(agent_id=AGENT_URI, requested_permissions=BASE_POLICY["permissions"])
     issuer = ApprovedIssuer(ca, authority.public_key, authority.owner_id)
@@ -82,11 +82,24 @@ def run_mtls_demo() -> dict:
         ("revoked_next_call", read),
         ("revoked_repeated_call", read),
     ]
+    service_pids = [policy_service.process.pid] if policy_service else []
+    if policy_service:
+        requests[5:5] = [
+            ("expansion_beyond_ceiling", {"tool": "shell", "action": "execute", "resource": "/bin/sh"}),
+            ("service_http_error", read),
+            ("service_timeout", read),
+            ("service_malformed", read),
+            ("service_stopped", read),
+            ("service_recovered", read),
+        ]
     # Only the trusted test harness holds these events. No request field or
     # endpoint can change permissions or revoke a session.
-    control_requested = {name: threading.Event() for name in ("narrow", "restore", "kill")}
-    control_committed = {name: threading.Event() for name in control_requested}
     controls_after_request = {2: "narrow", 3: "restore", 4: "kill"}
+    if policy_service:
+        controls_after_request = {2: "narrow", 3: "restore", 4: "expand", 5: "http_error",
+                                  6: "timeout", 7: "malformed", 8: "stop", 9: "restart", 10: "kill"}
+    control_requested = {name: threading.Event() for name in controls_after_request.values()}
+    control_committed = {name: threading.Event() for name in control_requested}
     ready = threading.Event()
     errors: queue.Queue = queue.Queue()
     server_result: dict = {}
@@ -166,13 +179,26 @@ def run_mtls_demo() -> dict:
                                         store.replace_named_policy("research-policy-v1", {"permissions": []})
                                     elif control == "restore":
                                         store.replace_named_policy("research-policy-v1", deepcopy(BASE_POLICY))
+                                    elif control == "expand":
+                                        policy_service.replace_policy({"permissions": [
+                                            {"tool": "shell", "action": "execute", "resource_prefix": "/bin"}]})
+                                    elif control in {"http_error", "timeout", "malformed"}:
+                                        policy_service.set_fault(control)
+                                    elif control == "stop":
+                                        policy_service.stop()
+                                    elif control == "restart":
+                                        policy_service.__enter__()
+                                        gateway.policy_decider = policy_service.client
+                                        service_pids.append(policy_service.process.pid)
                                     else:
                                         # The immediately preceding read must have executed.
-                                        if not response["allowed"] or dispatcher.dispatch_count != 2:
+                                        if not response["allowed"] or dispatcher.dispatch_count != (3 if policy_service else 2):
                                             raise AssertionError("revocation timing requires an allowed precondition")
                                         gateway.kill(session)
                                         server_result["kill_committed_ns"] = time.monotonic_ns()
                                         server_result["revocation_precondition_allowed"] = True
+                                    if policy_service and control in {"narrow", "restore"}:
+                                        policy_service.replace_policy(store.get_named_policy("research-policy-v1"))
                                     control_committed[control].set()
                         server_result["dispatch_count"] = dispatcher.dispatch_count
                         server_result["audit_log"] = deepcopy(gateway.audit_log)
@@ -226,9 +252,11 @@ def run_mtls_demo() -> dict:
         if client_error is not None:
             raise client_error
 
-    revoked = server_result["calls"][5]
+    revoked_index = 11 if policy_service else 5
+    revoked = server_result["calls"][revoked_index]
     committed = server_result["kill_committed_ns"]
     return {
+        "policy_service_pids": service_pids,
         "server": server_result, "client_responses": client_responses,
         "client_tls_version": client_tls_version,
         "approval": grant.public_record(),
@@ -238,7 +266,7 @@ def run_mtls_demo() -> dict:
             "clock": "time.monotonic_ns on one host",
             "kill_to_next_decision_ms": (revoked["decision_ns"] - committed) / 1_000_000,
             "kill_to_reply_sent_ms": (revoked["reply_sent_ns"] - committed) / 1_000_000,
-            "kill_to_client_receive_ms": (client_receive_ns[5] - committed) / 1_000_000,
+            "kill_to_client_receive_ms": (client_receive_ns[revoked_index] - committed) / 1_000_000,
             "next_call_decision_ms": (revoked["decision_ns"] - revoked["decision_started_ns"]) / 1_000_000,
             "interpretation": "One local sample includes harness scheduling and next-call transport; it is not a distributed revocation bound.",
         },

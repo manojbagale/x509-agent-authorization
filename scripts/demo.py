@@ -4,6 +4,9 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from agent_auth.policy_service import PolicyService
+from agent_auth.pki import AGENT_URI
+from agent_auth.scenarios import BASE_POLICY
 
 from agent_auth.mtls_demo import run_mtls_demo
 
@@ -11,14 +14,22 @@ from agent_auth.mtls_demo import run_mtls_demo
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, help="Save the complete result JSON from this execution.")
+    parser.add_argument("--remote-policy", action="store_true", help="Use a separate policy service and exercise failures.")
     args = parser.parse_args()
-    result = run_mtls_demo()
+    if args.remote_policy:
+        with PolicyService(AGENT_URI, "research-policy-v1", BASE_POLICY) as service:
+            result = run_mtls_demo(policy_service=service)
+    else:
+        result = run_mtls_demo()
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
 
     server = result["server"]
     print("Actual localhost file-tool demonstration")
+    if args.remote_policy:
+        print(f"Separate policy processes: {result['policy_service_pids']} (restart during recovery)")
+        print("Policy transport: authenticated loopback HTTP; 150 ms socket timeout; no decision cache")
     print(f"Permissions approved by: {result['approval']['approved_by']}")
     print(f"Agent: {server['agent_id']}")
     print(f"Transport: {server['tls_version']}; client certificate required: {result['mTLS_client_certificate_required']}")

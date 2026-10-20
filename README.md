@@ -63,6 +63,19 @@ The end-to-end flow is in [`run_mtls_demo()`](agent_auth/mtls_demo.py): credenti
 
 [`scenarios.py`](agent_auth/scenarios.py) defines the shared policies and request cases. [`evaluation.py`](agent_auth/evaluation.py) runs the five-model comparison. Tests under [`tests/`](tests/) cover each component and the complete network demo.
 
+## Remote policy decisions
+
+To run the same file-tool flow with a policy service in a separate process:
+
+```bash
+python scripts/demo.py --remote-policy
+python scripts/evaluate_remote_policy.py
+```
+
+The extended demo keeps one mTLS connection open while the policy service narrows access, attempts an expansion beyond the certificate ceiling, returns errors, times out, stops and recovers. Invalid or unavailable decisions deny access. The gateway still checks certificate expiry, local revocation and the signed ceiling; there is no cached allow or local fallback.
+
+This is an AuthZEN-inspired loopback HTTP experiment with a private request context and a gateway service token. It is not a production or conforming AuthZEN deployment. See [remote policy design and reproduction](docs/remote-policy.md).
+
 ## Experiments
 
 ```bash
@@ -80,7 +93,7 @@ The earlier four-certificate study remains available through `scripts/run_experi
 
 This is a single-host research implementation with a local CA, in-memory policy, and a custom JSON protocol over TLS. The file tool performs real reads; DNS cases are authorization checks only. It does not yet integrate an MCP runtime or provide process isolation for an untrusted agent.
 
-The next steps are an actual MCP tool path, networked policy and revocation state, fuller certificate-path validation, and concurrency and failure testing.
+The next steps are an actual MCP tool path, authenticated TLS for the policy service, distributed revocation state, fuller certificate-path validation, and concurrent failure testing.
 
 - [Experiment design and measurement definitions](docs/experiment-design.md)
 - [Research notes](docs/research-notes.md)

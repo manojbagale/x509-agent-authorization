@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import ExtensionOID, ExtendedKeyUsageOID
 
 from agent_auth.policy import (
-    AuthorizationError, PolicyStore, canonicalize_resource,
+    AuthorizationError, PolicyServiceError, PolicyStore, canonicalize_resource,
     matches_permissions, validate_permissions, validate_policy,
 )
 from agent_auth.pki import AGENT_AUTHZ_OID, TRUST_DOMAIN, ResearchCA, decode_agent_extension
@@ -33,8 +33,10 @@ class Session:
 
 class AuthorizationGateway:
     def __init__(self, ca: ResearchCA, policy_store: PolicyStore, *,
-                 clock: Callable[[], dt.datetime] | None = None):
+                 clock: Callable[[], dt.datetime] | None = None,
+                 policy_decider=None):
         self.ca = ca
+        self.policy_decider = policy_decider
         self._clock = clock or (lambda: dt.datetime.now(dt.timezone.utc))
         self.policy_store = policy_store
         self.kill_registry: set[int] = set()
@@ -193,8 +195,13 @@ class AuthorizationGateway:
             return decision
 
         try:
-            policy = validate_policy(self._policy_for_session(session))
-            live_match = matches_permissions(policy.get("permissions", []), request)
+            if self.policy_decider is not None and session.mode != "certificate":
+                live_match = self.policy_decider.evaluate(session, request)
+                if type(live_match) is not bool:
+                    raise PolicyServiceError("decision must be boolean")
+            else:
+                policy = validate_policy(self._policy_for_session(session))
+                live_match = matches_permissions(policy.get("permissions", []), request)
             if session.mode == "hybrid_ceiling":
                 _, signed_payload = self._decode_mode(session.cert)
                 ceiling_match = matches_permissions(signed_payload["max_permissions"], request)
@@ -205,11 +212,20 @@ class AuthorizationGateway:
             else:
                 allowed = live_match
                 reason = "matched_permission" if allowed else "outside_scope"
+        except PolicyServiceError:
+            decision = (False, "policy_unavailable")
+            self._audit(session, request, *decision)
+            return decision
         except (AuthorizationError, KeyError, TypeError):
             decision = (False, "policy_error")
             self._audit(session, request, *decision)
             return decision
 
+        # Remote evaluation can take time; recheck local lifecycle before admission.
+        if allowed and session.serial_number in self.kill_registry:
+            allowed, reason = False, "session_revoked"
+        elif allowed and not (session.cert.not_valid_before_utc <= self._clock() <= session.cert.not_valid_after_utc):
+            allowed, reason = False, "certificate_expired"
         decision = (allowed, reason)
         self._audit(session, request, *decision)
         return decision
