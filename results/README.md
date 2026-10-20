@@ -6,6 +6,13 @@ Saved experiment output is grouped by date. New runs write to `.local-runs/` by 
 |---|---|
 | [2026-09-28](2026-09-28/) | Original four-certificate comparison, size scaling, repeated benchmark, mTLS output, and OpenSSL checks |
 | [2026-10-05](2026-10-05/) | Five-model evaluation, raw samples and source hashes, persistent mTLS recording, local test output, and verification summary |
+| [2026-10-19](2026-10-19/) | Separate policy process: paired local/HTTP samples, six failure conditions, persistent mTLS recovery demo and 134 passing local tests |
+
+## October 19 remote policy comparison
+
+The [raw evaluation](2026-10-19/remote_policy.json) records clean source revision `fe6f64c`, five runs of three certificate modes across local and HTTP policy paths, 100 timed calls per combination per run and ten warmups. All 60 distinct mode/path/case combinations matched expectations, and all 60 repeated fault trials denied access.
+
+The [network demo](2026-10-19/remote_demo.json) records 13 calls on one TLS connection, three completed reads, policy-service failure and recovery, ceiling enforcement and local kill. The [test output](2026-10-19/pytest.txt) records 134 passing tests. Times are local observations, not production bounds. Recorded October 19 in America/Chicago (October 20 UTC).
 
 ## October 5 comparison
 

@@ -1,0 +1,10 @@
+5 runs; 100 samples per mode/transport/run; 10 warmups
+mode              transport  median ms   p95 ms (median of run p95)
+external           local        0.0206    0.0453
+external           http         0.7859    1.5098
+hybrid             local        0.0211    0.0888
+hybrid             http         0.7844    1.3811
+hybrid_ceiling     local        0.0395    0.1529
+hybrid_ceiling     http         0.8543    1.5518
+Fault trials denied: 60/60
+Saved: .local-runs/pr3/evaluation.json

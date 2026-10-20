@@ -1,0 +1,45 @@
+Actual localhost file-tool demonstration
+Separate policy processes: [148, 160] (restart during recovery)
+Policy transport: authenticated loopback HTTP; 150 ms socket timeout; no decision cache
+Permissions approved by: resource-owner:seminar-admin
+Agent: spiffe://seminar.fisk.edu/agent/research-agent-01
+Transport: TLSv1.3; client certificate required: True
+Connections: 1; handshakes: 1
+Policy changes and revocation below come from the trusted server harness.
+
+1. approved read: ALLOW (matched_live_policy_and_ceiling)
+   Completed file reads: 0 -> 1
+   Actual file content: Server-private research note: certificate identity is not permission.
+2. unauthorized shell: DENY (outside_scope)
+   Completed file reads: 1 -> 1
+3. unauthorized path: DENY (outside_scope)
+   Completed file reads: 1 -> 1
+4. policy narrowed: DENY (outside_scope)
+   Completed file reads: 1 -> 1
+5. policy restored: ALLOW (matched_live_policy_and_ceiling)
+   Completed file reads: 1 -> 2
+6. expansion beyond ceiling: DENY (outside_signed_ceiling)
+   Completed file reads: 2 -> 2
+7. service http error: DENY (policy_unavailable)
+   Completed file reads: 2 -> 2
+8. service timeout: DENY (policy_unavailable)
+   Completed file reads: 2 -> 2
+9. service malformed: DENY (policy_unavailable)
+   Completed file reads: 2 -> 2
+10. service stopped: DENY (policy_unavailable)
+   Completed file reads: 2 -> 2
+11. service recovered: ALLOW (matched_live_policy_and_ceiling)
+   Completed file reads: 2 -> 3
+12. revoked next call: DENY (session_revoked)
+   Completed file reads: 3 -> 3
+13. revoked repeated call: DENY (session_revoked)
+   Completed file reads: 3 -> 3
+
+Revocation timing: one local sample on the same TLS connection
+Allowed read immediately before kill: True
+Kill commit -> next denied decision: 0.164583 ms
+Kill commit -> client receives denial: 0.436091 ms
+Audit entries: 13; completed file reads: 3
+Scope: local custom JSON protocol; no MCP/LLM integration or OS sandbox.
+Subsequent calls are blocked; an already-running operation is not canceled.
+Complete result saved: .local-runs/pr3/demo.json
