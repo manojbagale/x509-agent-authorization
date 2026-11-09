@@ -15,9 +15,10 @@ In the network demo, an authorized read reaches a server-owned file dispatcher. 
 ## Limits
 
 - Client and trusted harness share a host and process infrastructure. The demo does not isolate the agent with containers, OS permissions, or network namespaces; a compromised local process is outside its tested boundary.
-- Direct-root lab CA, lab-only OID, JSON-in-DER encoding, local memory state, and in-memory audit logs are unsuitable as a production PKI design without further work.
+- Direct-root lab CAs, a lab-only OID, JSON-in-DER encoding and in-memory audit/kill state remain research limitations. Optional SQLite policy persists on one trusted host; it does not provide distributed consensus or protection against database-file rollback by a privileged writer.
 - Application kill denies later admitted calls. It does not revoke at the CA, distribute CRLs/OCSP, cancel an in-flight operation, or prove propagation across gateways.
-- No deployed Step CA/ACME workflow, complete MCP/LLM integration, OAuth consent server, or networked policy decision point is implemented.
+- The networked decision service has a TLS 1.3 profile with verified service hostname, required client certificates and a pinned gateway leaf. A separate HTTP profile remains an explicit loopback-only comparison. Neither profile is a complete AuthZEN implementation or a production server.
+- No deployed Step CA/ACME workflow, complete MCP/LLM integration or OAuth consent server is implemented. Service certificate rotation, hard end-to-end deadlines and sustained overload controls remain open.
 - The token baseline is a basic bearer reference. A holder of a copied valid token can act as that credential's subject until expiry/revocation; it is not bound to a private key or mTLS certificate.
 - Agent private-key theft, malicious approved operations, approval/issuer/gateway compromise, policy-plane compromise within the ceiling, distributed outages, replay across audiences, and general delegation are not eliminated by the tested mechanism.
 - Deterministic malicious-call tests do not measure prompt-injection success rates. Zero mismatches in a finite matrix is bounded correctness evidence, not a security proof.

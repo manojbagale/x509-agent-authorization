@@ -57,6 +57,8 @@ The end-to-end flow is in [`run_mtls_demo()`](agent_auth/mtls_demo.py): credenti
 | [`approval.py`](agent_auth/approval.py) | Owner-signed permission grants and approved issuance |
 | [`pki.py`](agent_auth/pki.py) | Local CA, certificates, and authorization extension encoding |
 | [`policy.py`](agent_auth/policy.py) | Policy store, path rules, and permission matching |
+| [`policy_service.py`](agent_auth/policy_service.py) | Remote decisions, HTTP/mTLS transport and trusted process controls |
+| [`policy_state.py`](agent_auth/policy_state.py) | SQLite policy snapshots and version-checked updates |
 | [`gateway.py`](agent_auth/gateway.py) | Certificate validation, sessions, per-call decisions, and audit |
 | [`tool_dispatch.py`](agent_auth/tool_dispatch.py) | Bounded file reads beneath a server-owned directory |
 | [`token_baseline.py`](agent_auth/token_baseline.py) | Opaque-token issuance and authorization using the same policy rules |
@@ -69,12 +71,16 @@ To run the same file-tool flow with a policy service in a separate process:
 
 ```bash
 python scripts/demo.py --remote-policy
+python scripts/demo.py --secure-policy
 python scripts/evaluate_remote_policy.py
+python scripts/evaluate_secure_policy.py
 ```
 
 The extended demo keeps one mTLS connection open while the policy service narrows access, attempts an expansion beyond the certificate ceiling, returns errors, times out, stops and recovers. Invalid or unavailable decisions deny access. The gateway still checks certificate expiry, local revocation and the signed ceiling; there is no cached allow or local fallback.
 
-This is an AuthZEN-inspired loopback HTTP experiment with a private request context and a gateway service token. It is not a production or conforming AuthZEN deployment. See [remote policy design and reproduction](docs/remote-policy.md).
+`--secure-policy` adds TLS 1.3 with required client certificates, server hostname verification and a pinned gateway leaf. The secure evaluator also tests SQLite-backed policy, abrupt restart, stale updates and concurrent decisions. Updates to persistent policy require its current version; the demo itself uses in-memory policy. Credentials and temporary databases are recreated for each run.
+
+This is an AuthZEN-inspired loopback experiment with a private request context and a gateway service token. See [remote policy design and reproduction](docs/remote-policy.md) for the HTTP comparison profile, secure profile and remaining limits.
 
 ## Experiments
 
@@ -91,9 +97,9 @@ The earlier four-certificate study remains available through `scripts/run_experi
 
 ## Scope and further work
 
-This is a single-host research implementation with a local CA, in-memory policy, and a custom JSON protocol over TLS. The file tool performs real reads; DNS cases are authorization checks only. It does not yet integrate an MCP runtime or provide process isolation for an untrusted agent.
+This is a single-host research implementation with local CAs, optional versioned SQLite policy and a custom JSON protocol over TLS. The file tool performs real reads; DNS cases are authorization checks only. It does not yet integrate an MCP runtime or provide process isolation for an untrusted agent.
 
-The next steps are an actual MCP tool path, authenticated TLS for the policy service, distributed revocation state, fuller certificate-path validation, and concurrent failure testing.
+The next steps are an actual MCP tool path, distributed revocation state, fuller certificate-path validation, certificate rotation and sustained overload/deadline testing.
 
 - [Experiment design and measurement definitions](docs/experiment-design.md)
 - [Research notes](docs/research-notes.md)
