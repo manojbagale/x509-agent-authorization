@@ -6,7 +6,14 @@ Saved experiment output is grouped by date. New runs write to `.local-runs/` by 
 |---|---|
 | [2026-09-28](2026-09-28/) | Original four-certificate comparison, size scaling, repeated benchmark, mTLS output, and OpenSSL checks |
 | [2026-10-05](2026-10-05/) | Five-model evaluation, raw samples and source hashes, persistent mTLS recording, local test output, and verification summary |
+| [2026-11-09](2026-11-09/) | Mutual TLS, versioned SQLite policy, abrupt restart, concurrent decisions and 161 passing local tests |
 | [2026-10-19](2026-10-19/) | Separate policy process: paired local/HTTP samples, six failure conditions, persistent mTLS recovery demo and 134 passing local tests |
+
+## November 9 secure policy evaluation
+
+The [raw secure evaluation](2026-11-09/secure_policy.json) records clean source revision `32895a4`, five rotated comparisons of local, HTTP/memory, mTLS/memory and mTLS/SQLite paths in signed-ceiling mode. It contains 2,000 timed authorization calls, 70 denied trust-failure trials, ten successful abrupt-restart checks, ten rejected stale updates and 1,520 version-matching concurrent decisions (1,200 phased and 320 overlapping an update). Each request retains its observed version. Timings describe this host and workload.
+
+The [secure file demo](2026-11-09/secure_demo.json) records 13 calls, three actual reads and ten denials while one agent TLS connection stays open; its separate policy link also uses mutual TLS. The public demo record retains decisions, TLS results and dispatch counts; identity, approval, certificate, audit and file-content fields are omitted. The demo uses memory policy, while persistence is evaluated separately. The [test output](2026-11-09/pytest.txt) records 161 passing local tests, including 27 new cases.
 
 ## October 19 remote policy comparison
 

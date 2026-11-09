@@ -1,0 +1,17 @@
+Signed-ceiling authorization: median of run medians / median of run p95 values (ms)
+local            0.0276 / 0.0529
+http_memory      0.5426 / 0.8059
+mtls_memory      2.4198 / 3.1557
+mtls_sqlite      2.5794 / 3.1464
+Trust rejection trials denied: 70/70
+Abrupt restarts preserved narrowed policy: 10/10
+Stale updates rejected after restart: 10/10
+1 workers, before: 200/200 correct, p95 3.179 ms, 373.9 req/s
+1 workers, after : 200/200 correct, p95 3.277 ms, 371.4 req/s
+4 workers, before: 200/200 correct, p95 5.916 ms, 952.3 req/s
+4 workers, after : 200/200 correct, p95 5.782 ms, 956.9 req/s
+8 workers, before: 200/200 correct, p95 9.837 ms, 1074.7 req/s
+8 workers, after : 200/200 correct, p95 9.515 ms, 1121.1 req/s
+Overlapping update: 320/320 matched snapshot; v1=24, v2=296
+Old-version replies completing after update acknowledgement: 0
+Saved: .local-runs/pr4/evaluation.json

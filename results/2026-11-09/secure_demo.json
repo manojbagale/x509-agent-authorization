@@ -1,0 +1,105 @@
+{
+  "source_commit": "32895a4e9f03bb484c868f1486c62f1244159847",
+  "scope": "Decision and dispatch evidence from the local synthetic-fixture demo; credential, approval, identity and file-content fields omitted.",
+  "policy_transport": "TLSv1.3; required client certificate; pinned gateway leaf; bearer service token",
+  "client_tls_version": "TLSv1.3",
+  "server": {
+    "tls_version": "TLSv1.3",
+    "connection_count": 1,
+    "handshake_count": 1,
+    "dispatch_count": 3,
+    "calls": [
+      {
+        "case": "approved_read",
+        "allowed": true,
+        "reason": "matched_live_policy_and_ceiling",
+        "dispatch_count_before": 0,
+        "dispatch_count_after": 1
+      },
+      {
+        "case": "unauthorized_shell",
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count_before": 1,
+        "dispatch_count_after": 1
+      },
+      {
+        "case": "unauthorized_path",
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count_before": 1,
+        "dispatch_count_after": 1
+      },
+      {
+        "case": "policy_narrowed",
+        "allowed": false,
+        "reason": "outside_scope",
+        "dispatch_count_before": 1,
+        "dispatch_count_after": 1
+      },
+      {
+        "case": "policy_restored",
+        "allowed": true,
+        "reason": "matched_live_policy_and_ceiling",
+        "dispatch_count_before": 1,
+        "dispatch_count_after": 2
+      },
+      {
+        "case": "expansion_beyond_ceiling",
+        "allowed": false,
+        "reason": "outside_signed_ceiling",
+        "dispatch_count_before": 2,
+        "dispatch_count_after": 2
+      },
+      {
+        "case": "service_http_error",
+        "allowed": false,
+        "reason": "policy_unavailable",
+        "dispatch_count_before": 2,
+        "dispatch_count_after": 2
+      },
+      {
+        "case": "service_timeout",
+        "allowed": false,
+        "reason": "policy_unavailable",
+        "dispatch_count_before": 2,
+        "dispatch_count_after": 2
+      },
+      {
+        "case": "service_malformed",
+        "allowed": false,
+        "reason": "policy_unavailable",
+        "dispatch_count_before": 2,
+        "dispatch_count_after": 2
+      },
+      {
+        "case": "service_stopped",
+        "allowed": false,
+        "reason": "policy_unavailable",
+        "dispatch_count_before": 2,
+        "dispatch_count_after": 2
+      },
+      {
+        "case": "service_recovered",
+        "allowed": true,
+        "reason": "matched_live_policy_and_ceiling",
+        "dispatch_count_before": 2,
+        "dispatch_count_after": 3
+      },
+      {
+        "case": "revoked_next_call",
+        "allowed": false,
+        "reason": "session_revoked",
+        "dispatch_count_before": 3,
+        "dispatch_count_after": 3
+      },
+      {
+        "case": "revoked_repeated_call",
+        "allowed": false,
+        "reason": "session_revoked",
+        "dispatch_count_before": 3,
+        "dispatch_count_after": 3
+      }
+    ]
+  }
+}
